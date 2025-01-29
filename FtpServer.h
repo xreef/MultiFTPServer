@@ -20,7 +20,7 @@
 #ifndef FTP_SERVER_H
 #define FTP_SERVER_H
 
-#define FTP_SERVER_VERSION "2.1.10 (2025-01-11)"
+#define FTP_SERVER_VERSION "2.1.11 (2025-01-28)"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -762,7 +762,8 @@ private:
   uint32_t millisDelay,               //
            millisEndConnection,       //
            millisBeginTrans,          // store time of beginning of a transaction
-           bytesTransfered;           //
+           bytesTransfered,
+          restartPos;           //
 
 
     static uint8_t maxSessions;         // maximum possible ftp sessions
