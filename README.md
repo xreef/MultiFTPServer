@@ -16,8 +16,11 @@
  - Wio Terminal (SdFat 2, Seed SD, and native FAT)
 
 #### Changelog
-- 2025-01-28 2.1.11 Add REST, ALLO, and STAT commands
-- 2025-01-11 2.1.10 Minor fix and optimizations
+- 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
+- 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
+- 2025-01-13 2.1.11 Add addictional LOG to prevent multiple user issues
+- 2025-01-12 2.1.11 Add REST (resume) command
+- 2025-01-11 2.1.10 Multiple minor fix and optimization
 - 2024-09-16 2.1.9 Fix LittleFS filename size.
 - 2024-07-16 2.1.8 Add SYST command.
 - 2023-10-07 2.1.7 Fix ESP32 rename on SD (thanks @scuba-hacker) #44

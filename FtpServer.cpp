@@ -1959,6 +1959,8 @@ void FtpServer::abortTransfer()
   }
 //  if( data.connected())
   data.stop(); 
+  restartPos = 0; // Reset restart position on abort
+
 }
 
 // Read a char from client connected to ftp server
@@ -2138,52 +2140,111 @@ bool FtpServer::makePath( char * fullName, char * param )
     strcpy( fullName, "/" );
     return true;
   }
-  // If relative path, concatenate with current dir
+
+  // Usa workingDir per tenere conto dei ".." modificati
+  char workingDir[FTP_CWD_SIZE];
+  strcpy( workingDir, cwdName );
+
+  // Processa eventuali sequenze iniziali "../" (incluso il caso di una sola "..")
+  // Ad ogni iterazione viene rimosso un livello dalla workingDir
+  while ( (strncmp(param, "../", 3) == 0) || (strcmp(param, "..") == 0) )
+  {
+    // Rimuovi la slash finale da workingDir se presente (salvaguardando la root)
+    int len = strlen( workingDir );
+    if (len > 1 && workingDir[len - 1] == '/')
+      workingDir[len - 1] = '\0';
+
+    // Trova l'ultima slash per individuare il livello superiore
+    char *lastSlash = strrchr( workingDir, '/' );
+    if (lastSlash != NULL)
+    {
+      // Se l'unica slash � quella iniziale, siamo alla root
+      if (lastSlash == workingDir)
+      {
+        workingDir[1] = '\0';  // Rimani in "/"
+      }
+      else
+      {
+        *lastSlash = '\0';  // Rimuovi l'ultimo componente
+      }
+    }
+    else
+    {
+      // Caso imprevisto: torna in root
+      strcpy( workingDir, "/" );
+    }
+
+    // Avanza il puntatore nel parametro:
+    // Se param � esattamente "..", salta quei 2 caratteri e interrompi il ciclo.
+    if (strcmp(param, "..") == 0)
+    {
+      param += 2; // Salta ".."
+      break;
+    }
+    else
+    {
+      // Altrimenti, param inizia con "../": salta i primi 3 caratteri.
+      param += 3;
+    }
+  }
+
+  // Gestione del prefisso "./"
+  if( strncmp( param, "./", 2 ) == 0 )
+  {
+    param += 2; // Salta "./"
+    // Se dopo "./" non c'� nulla, restituisce la workingDir aggiornata
+    if (*param == '\0')
+    {
+      strcpy( fullName, workingDir );
+      return true;
+    }
+  }
+
+  // Se il percorso � relativo, concatenalo con workingDir (aggiornato dai "../")
   if( param[0] != '/' ) 
   {
-    strcpy( fullName, cwdName );
-    if( fullName[ strlen( fullName ) - 1 ] != '/' )
+    strcpy( fullName, workingDir );
+    if( fullName[ strlen(fullName) - 1 ] != '/' )
       strncat( fullName, "/", FTP_CWD_SIZE );
     strncat( fullName, param, FTP_CWD_SIZE );
   }
   else
     strcpy( fullName, param );
-  // If ends with '/', remove it
+
+  // Rimuovi una eventuale slash finale in eccesso (se non si tratta della root)
   uint16_t strl = strlen( fullName ) - 1;
-  if( fullName[ strl ] == '/' && strl > 1 )
-    fullName[ strl ] = 0;
+  if( fullName[strl] == '/' && strl > 1 )
+    fullName[strl] = '\0';
+
   if( strlen( fullName ) >= FTP_CWD_SIZE )
   {
     client.println(F("500 Command line too long"));
     return false;
   }
-#ifdef UTF8_SUPPORT
-//  for( uint8_t i = 0; i < utf8_strlen( fullName ); i ++ ) {
-//
-//  }
 
+#ifdef UTF8_SUPPORT
   DEBUG_PRINT(F("utf8_strlen"));
   DEBUG_PRINTLN(utf8_strlen(fullName));
-//  DEBUG_PRINT(F("utf8_strlen2"));
-//  DEBUG_PRINTLN(utf8_strlen2(fullName));
-
-  if (utf8_strlen(fullName)>=FILENAME_LENGTH) {
-      client.println(F("553 File name not allowed. Too long.") );
+  if (utf8_strlen(fullName) >= FILENAME_LENGTH) {
+      client.println(F("553 File name not allowed. Too long."));
       return false;
   }
 #else
-  for( uint8_t i = 0; i < strlen( fullName ); i ++ ) {
-    if( ! legalChar( fullName[i]))
+  for( uint8_t i = 0; i < strlen(fullName); i++ )
+  {
+    if( !legalChar( fullName[i] ) )
     {
-      client.println(F("553 File name not allowed") );
+      client.println(F("553 File name not allowed"));
       return false;
     }
   }
-  if (strlen(fullName)>=FILENAME_LENGTH) {
-      client.println(F("553 File name not allowed. Too long.") );
+  if (strlen(fullName) >= FILENAME_LENGTH)
+  {
+      client.println(F("553 File name not allowed. Too long."));
       return false;
   }
 #endif
+
   return true;
 }
 

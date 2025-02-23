@@ -15,12 +15,12 @@
  **                                                                            **
  *******************************************************************************/
 
-#include <FtpServerKey.h>
-
 #ifndef FTP_SERVER_H
 #define FTP_SERVER_H
 
-#define FTP_SERVER_VERSION "2.1.11 (2025-01-28)"
+#include <FtpServerKey.h>
+
+#define FTP_SERVER_VERSION "2.1.10 (2025-01-11)"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -740,7 +740,7 @@ private:
   ftpTransfer transferStage;          // stage of data connection
   ftpDataConn dataConn;               // type of data connection
 
-  static bool anonymousConnection;
+  static bool anonymousConnection = false;
 
   uint8_t  __attribute__((aligned(4))) // need to be aligned to 32bit for Esp8266 SPIClass::transferBytes()
            buf[ FTP_BUF_SIZE ];       // data buffer for transfers
