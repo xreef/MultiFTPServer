@@ -1975,7 +1975,7 @@ void FtpServer::abortTransfer()
 
 int32_t FtpServer::readChar()
 {
-  int8_t rc = -1;
+  int32_t rc = -1;
 
   if( client.available())
   {
