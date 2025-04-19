@@ -1,6 +1,5 @@
 /*
  * FtpServer Arduino, esp8266 and esp32 library for Ftp Server
- * Derived form Jean-Michel Gallego version
  *
  * AUTHOR:  Renzo Mischianti
  *

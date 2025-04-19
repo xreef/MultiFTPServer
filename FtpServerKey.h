@@ -7,7 +7,6 @@
  *  - STM32
  *  - Raspberry Pi Pico W
  *
- * Derived form Jean-Michel Gallego version
  * AUTHOR:  Renzo Mischianti
  *
  * https://www.mischianti.org/category/my-libraries/simple-ftp-server/
