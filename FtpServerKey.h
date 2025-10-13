@@ -137,7 +137,7 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 #endif
 // Define the maximum number of concurrent sessions
 #ifndef FTP_MAX_SESSIONS
-    #define FTP_MAX_SESSIONS 2
+    #define FTP_MAX_SESSIONS 4
 #endif
 
 #endif // FTP_SERVER_CONFIG_H

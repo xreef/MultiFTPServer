@@ -16,6 +16,7 @@
  - Wio Terminal (SdFat 2, Seed SD, and native FAT)
 
 #### Changelog
+- 2025-10-13 2.2.0 Update to 2.2.0 (library.properties version update) multiple fix and update #2
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
 - 2025-01-13 2.1.11 Add addictional LOG to prevent multiple user issues

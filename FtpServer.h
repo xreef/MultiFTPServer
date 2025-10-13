@@ -19,7 +19,7 @@
 
 #include <FtpServerKey.h>
 
-#define FTP_SERVER_VERSION "2.1.11 (2025-02-24)"
+#define FTP_SERVER_VERSION "2.2.0 (2025-10-13)"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -739,7 +739,7 @@ private:
   ftpTransfer transferStage;          // stage of data connection
   ftpDataConn dataConn;               // type of data connection
 
-  static bool anonymousConnection = false;
+  static bool anonymousConnection;
 
   uint8_t  __attribute__((aligned(4))) // need to be aligned to 32bit for Esp8266 SPIClass::transferBytes()
            buf[ FTP_BUF_SIZE ];       // data buffer for transfers
