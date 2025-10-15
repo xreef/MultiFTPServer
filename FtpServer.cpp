@@ -49,6 +49,23 @@
 #include <FtpServer.h>
 #include <ctype.h>
 
+// Static member definitions required by the linker
+IPAddress FtpServer::localIp = IPAddress(0,0,0,0);
+FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::ftpServer = nullptr;
+FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::dataServer = nullptr;
+
+bool FtpServer::anonymousConnection = false;
+
+const char* FtpServer::user = "anonymous";
+const char* FtpServer::pass = "anonymous";
+const char* FtpServer::welcomeMessage = "Welcome to Simply FTP server";
+
+uint16_t FtpServer::cmdPort = FTP_CMD_PORT;
+uint16_t FtpServer::pasvPort = FTP_DATA_PORT_PASV;
+
+uint8_t FtpServer::maxSessions = 0;
+FtpServer** FtpServer::sessions = nullptr;
+
 // Implementations for 8.3 helpers (only for SD on AVR)
 #if (STORAGE_TYPE == STORAGE_SD)
 #if defined(__AVR__)
@@ -159,7 +176,7 @@ FtpServer::FtpServer( uint16_t _cmdPort, uint16_t _pasvPort, uint8_t _maxSession
   FtpServer::sessions[0] = this;
   idx = 0;
   FtpServer::maxSessions = 1;
-  for (uint8_t i = 1; i <= _maxSessions; i++) {
+  for (uint8_t i = 1; i < _maxSessions; i++) {
     FtpServer::sessions[i] = new FtpServer(_cmdPort, _pasvPort);
     if (FtpServer::sessions[i] == nullptr) break;
     FtpServer::sessions[i]->idx = i;
@@ -516,7 +533,7 @@ bool FtpServer::processCommand()
       DEBUG_PRINT(F("USER: "));
 	  DEBUG_PRINT(parameter);
 	  DEBUG_PRINT(F(" "));
-	  DEBUG_PRINTLN(FtpServer::user)
+	  DEBUG_PRINTLN(FtpServer::user);
 
 	if (FtpServer::anonymousConnection &&  ! strcmp( parameter, FtpServer::user )) {
       DEBUG_IDX; DEBUG_PRINTLN( F(" Anonymous authentication Ok. Waiting for commands.") );
@@ -541,9 +558,9 @@ bool FtpServer::processCommand()
   //
   else if( CommandIs( "PASS" ))
   {
-	  DEBUG_PRINT(F("PASS: ")) DEBUG_PRINTLN(pass);
-	  DEBUG_PRINT(F("PASS PARAM: ")) DEBUG_PRINTLN(parameter);
-	  DEBUG_PRINT(F("PASS OK: ")) DEBUG_PRINTLN(strcmp( parameter, pass ));
+	  DEBUG_PRINT(F("PASS: ")); DEBUG_PRINTLN(pass);
+	  DEBUG_PRINT(F("PASS PARAM: ")); DEBUG_PRINTLN(parameter);
+	  DEBUG_PRINT(F("PASS OK: ")); DEBUG_PRINTLN(strcmp( parameter, pass ));
     if( cmdStage != FTP_Pass )
     {
       client.println(F("503 ") );
@@ -717,8 +734,8 @@ bool FtpServer::processCommand()
     DEBUG_PRINT( int( dataIp[0]) ); DEBUG_PRINT( F(".") ); DEBUG_PRINT( int( dataIp[1]) ); DEBUG_PRINT( F(".") );
     DEBUG_PRINT( int( dataIp[2]) ); DEBUG_PRINT( F(".") ); DEBUG_PRINTLN( int( dataIp[3]) );
 
-    DEBUG_PRINT( F(" IP 0.0.0.0: ") );
-    DEBUG_PRINT(dataIp.toString());
+    // DEBUG_PRINT( F(" IP 0.0.0.0: ") );
+    // DEBUG_PRINT(dataIp.toString());
 
 #if !defined(ARDUINO_ARCH_RP2040) && ((FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_ESP8266_ASYNC) || (FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_ESP8266) || (FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_ESP8266) || (FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_ESP32)) // || 	(FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_WiFiNINA)  || (FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_SEEED_RTL8720DN))
     if (dataIp.toString() ==  F("0.0.0.0")) {
@@ -1769,7 +1786,7 @@ bool FtpServer::doList()
 //    if( dir.isDir()) {
 //      data.print( F("+/,\t") );
 //    } else {
-//    	data.print( F("+r,s") ); data.print( long( dir.fileSize()) ); data.print( F(",\t") );
+//    	data.print( F("+r,s") ); data.print( long( fileSize( file )) ); data.print( F(",\t") );
 //    }
 //    data.println( dir.fileName() );
 
@@ -1893,7 +1910,7 @@ bool FtpServer::doMlsd()
 
 	#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
 		  long fz = long( dir.fileSize());
-////		  const char* fn = dir.fileName().c_str();
+//		  const char* fn = dir.fileName().c_str();
 		  String aza = dir.fileName();
 		  const char* fn = aza.c_str(); //Serial.printf("test %s ", fn);
 
@@ -1937,37 +1954,25 @@ bool FtpServer::doMlsd()
 	  FTP_FILE fileDir = dir.openNextFile();
 	  if( fileDir )
 	  {
-		  DEBUG_PRINTLN(F("DIR NEXT "));
-		char dtStr[ 15 ];
-		// struct tm * timeinfo;
 
-		strcpy(dtStr, "19700101000000");
+//		data.print( F("+r,s") );
+//		data.print( long( fileDir.size()) );
+//		data.print( F(",\t") );
+//		data.println( fileDir.name() );
 
-		// Use fileDir.size() for file size and avoid redeclaring fz twice
+			String fn = fileDir.name();
+		if (fn[0]=='/') { fn.remove(0, fn.lastIndexOf("/")+1); }
 
-		long fz = fileDir.size();
-		String fn = fileDir.name();
-		fn.remove(0, fn.lastIndexOf("/")+1);
-
-
-
-		data.print( F("Type=") );
-
-		data.print( ( fileDir.isDirectory() ? F("dir") : F("file")) );
-		data.print( F(";Modify=") ); data.print(dtStr);// data.print( makeDateTimeStr( dtStr, time, time) );
-		data.print( F(";Size=") ); data.print( fz );
-		data.print( F("; ") ); data.println( fn );
-
-		DEBUG_PRINT( F("Type=") );
-		DEBUG_PRINT( ( fileDir.isDirectory() ? F("dir") : F("file")) );
-
-		DEBUG_PRINT( F(";Modify=") ); DEBUG_PRINT(dtStr); //DEBUG_PRINT( makeDateTimeStr( dtStr, time, time) );
-		DEBUG_PRINT( F(";Size=") ); DEBUG_PRINT( fz );
-		DEBUG_PRINT( F("; ") ); DEBUG_PRINTLN( fn );
+#if STORAGE_TYPE == STORAGE_SD_MMC
+		time_t time = fileDir.getLastWrite();
+		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), time, FtpServer::user);
+#else
+		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), "Jan 01 00:00", FtpServer::user);
+#endif
 
 		nbMatch ++;
 		return true;
-	  }
+  }
 
 #elif STORAGE_TYPE == STORAGE_FATFS
   if( dir.nextFile())
@@ -2767,20 +2772,5 @@ bool FtpServer::getFileModTime( uint16_t * pdate, uint16_t * ptime )
   };
 #endif
 
-// Static member definitions required by the linker
-IPAddress FtpServer::localIp = IPAddress(0,0,0,0);
-FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::ftpServer = nullptr;
-FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::dataServer = nullptr;
 
-bool FtpServer::anonymousConnection = false;
-
-const char* FtpServer::user = "anonymous";
-const char* FtpServer::pass = "anonymous";
-const char* FtpServer::welcomeMessage = "Welcome to Simply FTP server";
-
-uint16_t FtpServer::cmdPort = FTP_CMD_PORT;
-uint16_t FtpServer::pasvPort = FTP_DATA_PORT_PASV;
-
-uint8_t FtpServer::maxSessions = 0;
-FtpServer** FtpServer::sessions = nullptr;
 

@@ -243,8 +243,8 @@
 #endif
 
 #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040)
-	#define CommandIs( a ) (command != NULL && ! strcmp_P( command, PSTR( a )))
-	#define ParameterIs( a ) ( parameter != NULL && ! strcmp_P( parameter, PSTR( a )))
+	#define CommandIs( a ) (command != nullptr && ! strcmp_P( command, PSTR( a )))
+	#define ParameterIs( a ) ( parameter != nullptr && ! strcmp_P( parameter, PSTR( a )))
 #else
 	#define CommandIs( a ) ( ! strcmp_PF( command, PSTR( a )))
 	#define ParameterIs( a ) ( ! strcmp_PF( parameter, PSTR( a )))
@@ -485,13 +485,13 @@
 
 // Setup debug printing macros.
 #ifdef FTP_SERVER_DEBUG
-	#define DEBUG_PRINT(...) { DEBUG_PRINTER.print(__VA_ARGS__); }
-	#define DEBUG_PRINTLN(...) { DEBUG_PRINTER.println(__VA_ARGS__); }
+	#define DEBUG_PRINT(...) do { DEBUG_PRINTER.print(__VA_ARGS__); } while(false);
+	#define DEBUG_PRINTLN(...) do { DEBUG_PRINTER.println(__VA_ARGS__); } while(false);
 #else
-	#define DEBUG_PRINT(...) {}
-	#define DEBUG_PRINTLN(...) {}
+	#define DEBUG_PRINT(...) do {} while(false);
+	#define DEBUG_PRINTLN(...) do {} while(false);
 #endif
-#define DEBUG_IDX DEBUG_PRINTLN(idx);
+#define DEBUG_IDX DEBUG_PRINT(idx); DEBUG_PRINT(F(" "));
 
 #define FTP_CMD_PORT 21           // Command port on which server is listening
 #define FTP_DATA_PORT_DFLT 20     // Default data port in active mode
@@ -588,8 +588,8 @@ private:
   bool    doMlsd();
   void    closeTransfer();
   void    abortTransfer();
-  bool    makePath( char * fullName, char * param = NULL );
-  bool    makeExistsPath( char * path, char * param = NULL );
+  bool    makePath( char * fullName, char * param = nullptr );
+  bool    makeExistsPath( char * path, char * param = nullptr );
   bool    openDir( FTP_DIR * pdir );
   bool    isDir( char * path );
   uint8_t getDateTime( char * dt, uint16_t * pyear, uint8_t * pmonth, uint8_t * pday,
@@ -653,6 +653,9 @@ private:
 #else
   bool openFile( char path[ FTP_CWD_SIZE ], const char * readType );
   bool openFile( const char * path, const char * readType );
+  // Non-invasive overloads to accept numeric file modes (e.g. FILE_READ) without warnings
+  bool openFile( char path[ FTP_CWD_SIZE ], uint8_t readType );
+  bool openFile( const char * path, uint8_t readType );
 //  bool openFile( char path[ FTP_CWD_SIZE ], int readTypeInt );
 #endif
 //  bool openFile( char path[ FTP_CWD_SIZE ], const char * readType );
@@ -742,7 +745,7 @@ private:
   static bool anonymousConnection;
 
   uint8_t  __attribute__((aligned(4))) // need to be aligned to 32bit for Esp8266 SPIClass::transferBytes()
-           buf[ FTP_BUF_SIZE ];       // data buffer for transfers
+           *buf{nullptr};       // data buffer for transfers
   char     cmdLine[ FTP_CMD_SIZE ];   // where to store incoming char from client
   char     cwdName[ FTP_CWD_SIZE ];   // name of current directory
   char     rnfrName[ FTP_CWD_SIZE ];  // name of file for RNFR command
@@ -751,6 +754,7 @@ private:
   char     command[ 5 ];              // command sent by client
   bool     rnfrCmd;                   // previous command was RNFR
   char *   parameter;                 // point to begin of parameters sent by client
+  char     parameterBuf[ FTP_CMD_SIZE ]; // buffer to store parameter safely
     static const char *   welcomeMessage;
     static uint16_t cmdPort;
     static uint16_t pasvPort;
