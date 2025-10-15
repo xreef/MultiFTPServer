@@ -1,21 +1,161 @@
-# MultiFTPServer
+# MultiFTPServer Library v2.2.0
 
-[All articles and information](https://www.mischianti.org/category/my-libraries/simple-ftp-server/)
+![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
- - [Instruction on FTP server on esp8266 and esp32](https://www.mischianti.org/2020/02/08/ftp-server-on-esp8266-and-esp32)
- - [Multi FTP server library now with support for Wio Terminal and SD](https://www.mischianti.org/2021/07/01/simple-ftp-server-library-now-with-support-for-wio-terminal-and-sd/)
+[![arduino-library-badge](https://www.ardu-badge.com/badge/MultiFTPServer.svg?)](https://www.ardu-badge.com/MultiFTPServer)  
+[![](https://img.shields.io/badge/Platform-Arduino%20%7C%20ESP32%20%7C%20ESP8266%20%7C%20RP2040-green.svg)]()  
+[![](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE.md)
 
+A lightweight Arduino/embedded library to expose a device filesystem over FTP, allowing uploads, downloads and remote file management from standard FTP clients (FileZilla, WinSCP, Explorer, etc.).
 
+**Author:** Renzo Mischianti  
+**Website:** [www.mischianti.org](https://www.mischianti.org/category/my-libraries/simple-ftp-server/)  
+**GitHub:** [xreef/MultiFTPServer](https://github.com/xreef/MultiFTPServer)
 
-#### Multi FTP server for 
- - Raspberry Pi Pico W (Flash: LittleFS) (To test SD and SdFat)
- - esp8266 (Flash: SPIFFs, LittleFS. SD: SD, SdFat 2)
- - esp32 (SPIFFS, LITTLEFS, FFAT, SD: SD, SdFat)
- - stm32 (SdFat, SPI flash)
- - Arduino (SD with 8.3 file format, SD: SD, SdFat 2)
- - Wio Terminal (SdFat 2, Seed SD, and native FAT)
+---
 
-#### Changelog
+## 📚 Documentation & Tutorials
+Complete tutorials and platform-specific guides by the author are available on mischianti.org.
+
+### General Documentation
+- 🌐 **[Multi FTP Server Library Home](https://www.mischianti.org/category/my-libraries/simple-ftp-server/)** - Main library page with articles and examples
+- 📖 **[FTP server on ESP8266 and ESP32](https://www.mischianti.org/2020/02/08/ftp-server-on-esp8266-and-esp32)** - Getting started guide
+- 📖 **[Multi FTP server library now with support for Wio Terminal and SD](https://www.mischianti.org/2021/07/01/simple-ftp-server-library-now-with-support-for-wio-terminal-and-sd/)**
+
+### Platform-specific tutorials
+#### ESP32
+- 📁 [ESP32: FTP server with SPIFFS / LittleFS / SD examples](https://www.mischianti.org/2020/02/08/ftp-server-on-esp8266-and-esp32)
+
+#### ESP8266
+- 📁 [ESP8266: FTP server and SPIFFS / LittleFS guide](https://www.mischianti.org/2020/02/08/ftp-server-on-esp8266-and-esp32)
+
+#### Raspberry Pi Pico W (RP2040)
+- 📁 [RP2040: LittleFS and WiFi examples (see examples folder)](https://www.mischianti.org/category/my-libraries/simple-ftp-server/)
+
+#### Arduino / STM32 / Wio Terminal
+- 📁 See the examples in the `examples/` folder and the library page on mischianti.org for board-specific notes and SD wiring.
+
+---
+
+## 📋 Table of Contents
+- [Features](#-features)
+- [Supported Platforms](#-supported-platforms)
+- [Supported Network Interfaces](#-supported-network-interfaces)
+- [Supported Storage Systems](#-supported-storage-systems)
+- [Installation](#-installation)
+- [Basic Usage](#-basic-usage)
+- [Configuration](#-configuration)
+- [Included Examples](#-included-examples)
+- [Changelog](#-changelog)
+- [License](#-license)
+- [Contributing](#-contributing)
+- [Support & Contact](#-support--contact)
+
+## ✨ Features
+
+- Expose device filesystem via FTP (upload, download, delete, rename, list)
+- Multiple concurrent FTP sessions (configurable with `FTP_MAX_SESSIONS`)
+- Resume support (REST) and RFC-like commands (ALLO, STAT, SYST, HELP)
+- UTF-8 filename support
+- Configurable buffers and timeouts via `FtpServerKey.h`
+- Works with internal flash filesystems (SPIFFS, LittleFS, FFAT) and external SD (SD, SdFat)
+- Small footprint and simple API: `begin()` and `handleFTP()`
+
+## 🎯 Supported Platforms
+
+| Platform | Filesystems | Notes |
+|---|---|---|
+| ESP32 | SPIFFS, LittleFS, FFAT, SD | Full support, see examples |
+| ESP8266 | SPIFFS, LittleFS, SD | Limited RAM vs ESP32 |
+| RP2040 / Pico W | LittleFS, SD | See Pico W examples |
+| STM32 | SdFat, SPI flash | Use SdFat examples |
+| Arduino (AVR) | SD (8.3) | Use SdFat for better compatibility |
+| Wio Terminal | SdFat, Seed SD, native FAT | See Wio examples |
+
+> ⚠️ Note: Some older AVR boards (Uno/Mega) have limited RAM and may not support large transfers or advanced features. Prefer ESP32/ESP8266 for heavy use.
+
+## 🌐 Supported Network Interfaces
+
+- WiFi (ESP32, ESP8266, RP2040-W)  
+- Ethernet (W5x00, W5500, ENC28J60) — platform and example dependent
+
+## 💾 Supported Storage Systems
+
+### Internal flash
+- SPIFFS (ESP8266/ESP32)
+- LittleFS (ESP8266/ESP32/RP2040)
+- FFAT (ESP32)
+
+### External storage
+- SD (Arduino SD library)
+- SdFat / SdFat2 (recommended)
+
+## 📦 Installation
+
+### Arduino IDE (Library Manager)
+1. Open Arduino IDE
+2. Sketch > Include Library > Manage Libraries
+3. Search for "MultiFTPServer" and install (if available)
+
+### Manual installation
+1. Copy the repository folder into your Arduino `libraries/` folder
+2. Restart Arduino IDE
+
+### PlatformIO
+Add to `platformio.ini`:
+```ini
+lib_deps = xreef/MultiFTPServer@^2.2.0
+```
+
+## 🚀 Basic Usage
+
+### Quick start (ESP32 example)
+
+```cpp
+#include <WiFi.h>
+#include <MultiFTPServer.h>
+
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASS";
+
+FtpServer ftpSrv;
+
+void setup(){
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connected. IP: ");
+  Serial.println(WiFi.localIP());
+
+  // Mount filesystem before starting FTP (SPIFFS/LittleFS/SD)
+  // SPIFFS.begin(); or LittleFS.begin(); or SD.begin(SD_CS_PIN);
+
+  ftpSrv.begin("user", "pass");
+}
+
+void loop(){
+  ftpSrv.handleFTP();
+}
+```
+
+## ⚙️ Configuration
+
+See `FtpServerKey.h` for config defines and defaults. Key settings:
+- `FTP_BUF_SIZE` — transfer buffer size
+- `FTP_MAX_SESSIONS` — number of concurrent FTP sessions
+- `FTP_TIME_OUT` — inactivity timeout (seconds)
+- `FTP_AUTH_TIME_OUT` — authentication timeout (seconds)
+- `DEBUG_PRINTER` — debug output stream (defaults to `Serial`)
+
+## 🧩 Included Examples
+
+See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
+
+## 📝 Changelog (excerpt)
 - 2025-10-13 2.2.0 Update to 2.2.0 (library.properties version update) multiple fix and update #2
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
@@ -38,92 +178,27 @@
 - 2022-02-22 1.2.0 Add anonymous user and implement correct RFC (#9 now work correctly with File Explorer)
 - 2022-02-01 1.1.1 Add workaround to start FTP server before connection, add end and setLocalIP method.
 
-#### Code from fork
-From fork https://github.com/yasheena/MultiFTPServer
-Enable more than one concurrent FTP session. So i.e. it is possible to use WinSCP to edit files and use background transfers (transfer queue).
+## 📄 License
+MIT License — see `LICENSE.md` for details.
 
-On default in FtpServerKey.h the define FTP_MAX_SESSIONS is set to 2 for two concurrent FTP connections. But you can also use another value by using the 3rd parameter of the FtpServer constructor, which I added in MultiFTPServer (compared to SimpleFTPServer). A single new method added for the MultiFTPServer is getMaxSessions() to get the actual number of concurrently useable FTP sessions. 
+Copyright (c) 2017-2025 Renzo Mischianti
 
-## Info
+## 🤝 Contributing
+Contributions are welcome! Fork the repo, create a feature branch, commit and submit a Pull Request. Please ensure examples build on target platforms before opening a PR.
 
-<!-- wp:paragraph -->
-<p>When I develop a new solution I'd like to divide the application in layer, and so I'd like focus my attention in only one aspect at time. </p>
-<!-- /wp:paragraph -->
+## 📞 Support & Contact
+- Website: https://www.mischianti.org/category/my-libraries/simple-ftp-server/
+- GitHub Issues: https://github.com/xreef/MultiFTPServer/issues
+- Forum / Articles: https://www.mischianti.org/
 
-<!-- wp:paragraph -->
-<p> In detail I separate the REST layer (written inside the microcontroller) and the Front-End (written in Angular, React/Redux or vanilla JS), so I'd like to upload new web interface directly to the microcontroller via FTP. </p>
-<!-- /wp:paragraph -->
+## 👤 Author
+**Renzo Mischianti**  
+Website: https://www.mischianti.org  
+Email: renzo.mischianti@gmail.com  
+GitHub: [@xreef](https://github.com/xreef)
 
-<!-- wp:image {"align":"center","id":2155} -->
-<div class="wp-block-image"><figure class="aligncenter"><img width="450px" src="https://www.mischianti.org/wp-content/uploads/2019/06/FTPTransferEsp8266-1024x662.jpg" alt="" class="wp-image-2155"/><figcaption></figcaption></figure></div>
-<!-- /wp:image -->
+---
 
-<!-- wp:paragraph -->
-<p>For static information (Web pages for examples), that not change frequently, esp8266 or esp32 have internal SPIFFS (SPI Flash File System) and you can upload data via Arduino IDE as explained in the article  "<a href="https://www.mischianti.org/2019/08/30/wemos-d1-mini-esp8266-integrated-spiffs-filesistem-part-2/">WeMos D1 mini (esp8266), integrated SPIFFS Filesystem</a>" for esp8266 or "<a rel="noreferrer noopener" href="https://www.mischianti.org/2020/06/04/esp32-integrated-spiffs-filesystem-part-2/" target="_blank">ESP32: integrated SPIFFS FileSystem</a>" for esp32 or with LittleFS "<a href="https://www.mischianti.org/2020/06/22/wemos-d1-mini-esp8266-integrated-littlefs-filesystem-part-5/">WeMos D1 mini (esp8266), integrated LittleFS Filesystem</a>" but for fast operation and future support It's usefully use FTP.</p>
-<!-- /wp:paragraph -->
+⭐ If this library helped your project, please star the repository on GitHub!
 
-
-
-```cpp
-/*
- * FtpServer esp8266 and esp32 with SPIFFS
- *
- * AUTHOR:  Renzo Mischianti
- *
- * https://www.mischianti.org/2020/02/08/ftp-server-on-esp8266-and-esp32
- *
- */
-
-#ifdef ESP8266
-#include <ESP8266WiFi.h>
-#elif defined ESP32
-#include <WiFi.h>
-#include "SPIFFS.h"
-#endif
-
-#include <MultiFTPServer.h>
-
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASS";
-
-
-FtpServer ftpSrv;   //set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
-
-
-void setup(void){
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  Serial.println("");
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-
-  /////FTP Setup, ensure SPIFFS is started before ftp;  /////////
-  
-  /////FTP Setup, ensure SPIFFS is started before ftp;  /////////
-#ifdef ESP32       //esp32 we send true to format spiffs if cannot mount
-  if (SPIFFS.begin(true)) {
-#elif defined ESP8266
-  if (SPIFFS.begin()) {
-#endif
-      Serial.println("SPIFFS opened!");
-      ftpSrv.begin("esp8266","esp8266");    //username, password for ftp.  set ports in ESP8266FtpServer.h  (default 21, 50009 for PASV)
-  }    
-}
-void loop(void){
-  ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!!  
- // server.handleClient();   //example if running a webserver you still need to call .handleClient();
- 
-}
-```
-
-https://downloads.arduino.cc/libraries/logs/github.com/xreef/MultiFTPServer/
+Made with ❤️ by Renzo Mischianti
