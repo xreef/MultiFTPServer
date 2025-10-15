@@ -3,7 +3,7 @@
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
 [![arduino-library-badge](https://www.ardu-badge.com/badge/MultiFTPServer.svg?)](https://www.ardu-badge.com/MultiFTPServer)  
-[![](https://img.shields.io/badge/Platform-Arduino%20%7C%20ESP32%20%7C%20ESP8266%20%7C%20RP2040-green.svg)]()  
+[![](https://img.shields.io/badge/Platform-Arduino%20%7C%20ArduinoSAMD%20%7C%20ESP32%20%7C%20ESP8266%20%7C%20RP2040%20%7C%20STM32-green.svg)]()  
 [![](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE.md)
 
 A lightweight Arduino/embedded library to expose a device filesystem over FTP, allowing uploads, downloads and remote file management from standard FTP clients (FileZilla, WinSCP, Explorer, etc.).
@@ -156,7 +156,7 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
-- 2025-10-13 2.2.0 Update to 2.2.0 (library.properties version update) multiple fix and update #2
+- 2025-10-13 2.2.0 Multiple fix, BUS management and update #2
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
 - 2025-01-13 2.1.11 Add addictional LOG to prevent multiple user issues

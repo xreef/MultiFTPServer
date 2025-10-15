@@ -1940,12 +1940,12 @@ bool FtpServer::doMlsd()
 	#endif
 	#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
 		time_t time = dir.fileTime();
-		generateFileLine(&data, dir.isDirectory(), fn, fz, time, this->user);
+		generateFileLine(&data, dir.isDirectory(), fn, fz, time, FtpServer::user);
 	#elif ESP32
 		time_t time = fileDir.getLastWrite();
-		generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, this->user);
+		generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, FtpServer::user);
 	#else
-		generateFileLine(&data, fileDir.isDirectory(), fn, fz, "Jan 01 00:00", this->user);
+		generateFileLine(&data, fileDir.isDirectory(), fn, fz, "Jan 01 00:00", FtpServer::user);
 	#endif
     nbMatch ++;
     return true;
