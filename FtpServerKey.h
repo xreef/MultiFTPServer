@@ -128,9 +128,10 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 #endif
 
 
+
 // Size of file buffer for read/write
 // Transfer speed depends of this value
-// Best value depends on many factors: SD card, client side OS, ... 
+// Best value depends on many factors: SD card, client side OS, ...
 // But it can be reduced to 512 if memory usage is critical.
 #ifndef FTP_BUF_SIZE
   // Set sensible defaults per piattaforma to maximize throughput without
