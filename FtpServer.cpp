@@ -159,6 +159,43 @@ FtpServer::FtpServer( uint16_t _cmdPort, uint16_t _pasvPort, uint8_t _maxSession
   nbMatch = 0;
   iCL = 0;
 
+#ifdef DYNAMIC_TRANSFER_BUFFER
+#if defined(ESP32) || defined(ESP8266)
+	size_t free_ram = ESP.getFreeHeap();
+	// Use 1/4 of free RAM, with a max of 4096 and a min of 512
+	ftp_buf_size = free_ram / 4;
+	if (ftp_buf_size > 4096) ftp_buf_size = 4096;
+	if (ftp_buf_size < 512) ftp_buf_size = 512;
+#else
+	// Fallback for other platforms
+	ftp_buf_size = FTP_BUF_SIZE;
+#endif
+
+	// Ensure size is a multiple of alignment for aligned_alloc
+	const size_t alignment = 4;
+	if (ftp_buf_size % alignment != 0) {
+		ftp_buf_size = (ftp_buf_size / alignment) * alignment;
+	}
+
+	// Use aligned_alloc where available (e.g., ESP32), otherwise fallback to malloc.
+#if defined(ESP32) && __cplusplus >= 201103L
+	buf = (uint8_t*)aligned_alloc(alignment, ftp_buf_size);
+#else
+	buf = (uint8_t*)malloc(ftp_buf_size);
+#endif
+
+	if (buf == nullptr) {
+		// Fallback to a smaller, safe buffer if allocation fails
+		ftp_buf_size = 512;
+		buf = (uint8_t*)malloc(ftp_buf_size);
+		if (buf == nullptr) {
+			// Critical error, could not allocate even the smallest buffer.
+			// Handle this case, maybe by logging and stopping.
+			return;
+		}
+	}
+#endif
+
   iniVariables();
 
   if (FtpServer::maxSessions > 0) {
@@ -182,6 +219,17 @@ FtpServer::FtpServer( uint16_t _cmdPort, uint16_t _pasvPort, uint8_t _maxSession
     FtpServer::sessions[i]->idx = i;
     FtpServer::maxSessions = i + 1;
   }
+}
+
+// DESTRUCTOR
+FtpServer::~FtpServer()
+{
+#ifdef DYNAMIC_TRANSFER_BUFFER
+	if (buf != nullptr) {
+		::free(buf); // Use global scope for free() to avoid conflict with class member
+		buf = nullptr;
+	}
+#endif
 }
 
 void FtpServer::begin( const char * _user, const char * _pass, const char * _welcomeMessage )
@@ -1469,7 +1517,13 @@ bool FtpServer::doRetrieve()
       restartPos = 0; // Reset after use
   }
 
-  int16_t nb = file.read( buf, FTP_BUF_SIZE );
+//  int16_t nb = file.read( buf, FTP_BUF_SIZE );
+#ifdef DYNAMIC_TRANSFER_BUFFER
+	int16_t nb = file.read( buf, ftp_buf_size );
+#else
+	int16_t nb = file.read( buf, FTP_BUF_SIZE );
+#endif
+
   if( nb > 0 )
   {
     data.write( buf, nb );
@@ -1507,9 +1561,20 @@ bool FtpServer::doStore()
     }
   }
 
-  if( na > FTP_BUF_SIZE ) {
-    na = FTP_BUF_SIZE;
-  }
+//  if( na > FTP_BUF_SIZE ) {
+//    na = FTP_BUF_SIZE;
+//  }
+
+#ifdef DYNAMIC_TRANSFER_BUFFER
+	if( na > ftp_buf_size ) {
+		na = ftp_buf_size;
+	}
+#else
+	if( na > FTP_BUF_SIZE ) {
+		na = FTP_BUF_SIZE;
+	}
+#endif
+
   int16_t nb = data.read((uint8_t *) buf, na );
   int16_t rc = 0;
   if( nb > 0 )
@@ -2480,48 +2545,73 @@ uint32_t FtpServer::fileSize( FTP_FILE & file ) {
 #if (STORAGE_TYPE == STORAGE_SEEED_SD)
   bool FtpServer::openFile( char path[ FTP_CWD_SIZE ], int readTypeInt ){
         DEBUG_IDX;
-		DEBUG_PRINT(F("File to open ") );
-		DEBUG_PRINT( path );
-		DEBUG_PRINT(F(" readType ") );
-		DEBUG_PRINTLN(readTypeInt);
+	DEBUG_PRINT(F("File to open ") );
+	DEBUG_PRINT( path );
+	DEBUG_PRINT(F(" readType ") );
+	DEBUG_PRINTLN(readTypeInt);
 
-		if (readTypeInt == 0X01) {
-			readTypeInt = FILE_READ;
-		}else {
-			readTypeInt = FILE_WRITE;
-		}
+	// Map FTP readTypeInt explicitly to storage open modes.
+	// FTP_FILE_READ should open for read only. Other FTP modes (APPE/STOR) should map to write/append as appropriate.
+	uint8_t openMode = (uint8_t)readTypeInt;
+	#if defined(FTP_FILE_READ) && defined(FTP_FILE_WRITE_APPEND) && defined(FTP_FILE_WRITE_CREATE)
+	if (readTypeInt == FTP_FILE_READ) {
+		openMode = FILE_READ;
+	} else if (readTypeInt == FTP_FILE_WRITE_APPEND) {
+		// APPE: append to existing file (preserve append behavior)
+		openMode = FILE_WRITE; // underlying FILE_WRITE may include append flag where appropriate
+	} else if (readTypeInt == FTP_FILE_WRITE_CREATE) {
+		// STOR: create/overwrite; use FILE_WRITE (caller removes file before opening if needed)
+		openMode = FILE_WRITE;
+	} else {
+		// fallback: use provided numeric mode
+		openMode = (uint8_t)readTypeInt;
+	}
+	#else
+	// If FTP constants aren't available, keep previous simple mapping but avoid forcing append on reads
+	openMode = (readTypeInt == 0x01) ? FILE_READ : FILE_WRITE;
+	#endif
 
-		file = STORAGE_MANAGER.open( path, readTypeInt );
-		if (!file) { // && readTypeInt[0]==FILE_READ) {
-			return false;
-		}else{
-			DEBUG_IDX; DEBUG_PRINTLN(F("TRUE"));
+	file = STORAGE_MANAGER.open( path, openMode );
+	if (!file) { // && readTypeInt[0]==FILE_READ) {
+		return false;
+	}else{
+		DEBUG_IDX; DEBUG_PRINTLN(F("TRUE"));
 
-			return true;
-		}
+		return true;
+	}
 }
 #elif ((STORAGE_TYPE == STORAGE_SD || STORAGE_TYPE == STORAGE_SD_MMC) && defined(ESP8266))// FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_ESP8266_242)
   bool FtpServer::openFile( char path[ FTP_CWD_SIZE ], int readTypeInt ){
         DEBUG_IDX;
-		DEBUG_PRINT(F("File to open ") );
-		DEBUG_PRINT( path );
-		DEBUG_PRINT(F(" readType ") );
-		DEBUG_PRINTLN(readTypeInt);
+	DEBUG_PRINT(F("File to open ") );
+	DEBUG_PRINT( path );
+	DEBUG_PRINT(F(" readType ") );
+	DEBUG_PRINTLN(readTypeInt);
 
-		if (readTypeInt == 0X01) {
-			readTypeInt = FILE_READ;
-		}else {
-			readTypeInt = FILE_WRITE;
-		}
+	// Map FTP readTypeInt explicitly to storage open modes for ESP8266 SD variants.
+	uint8_t openMode = (uint8_t)readTypeInt;
+	#if defined(FTP_FILE_READ) && defined(FTP_FILE_WRITE_APPEND) && defined(FTP_FILE_WRITE_CREATE)
+	if (readTypeInt == FTP_FILE_READ) {
+		openMode = FILE_READ;
+	} else if (readTypeInt == FTP_FILE_WRITE_APPEND) {
+		openMode = FILE_WRITE; // append behavior for APPE
+	} else if (readTypeInt == FTP_FILE_WRITE_CREATE) {
+		openMode = FILE_WRITE; // create/overwrite for STOR
+	} else {
+		openMode = (uint8_t)readTypeInt;
+	}
+	#else
+	openMode = (readTypeInt == 0x01) ? FILE_READ : FILE_WRITE;
+	#endif
 
-		file = STORAGE_MANAGER.open( path, readTypeInt );
-		if (!file) { // && readTypeInt[0]==FILE_READ) {
-			return false;
-		}else{
-			DEBUG_IDX; DEBUG_PRINTLN(F("TRUE"));
+	file = STORAGE_MANAGER.open( path, openMode );
+	if (!file) { // && readTypeInt[0]==FILE_READ) {
+		return false;
+	}else{
+		DEBUG_IDX; DEBUG_PRINTLN(F("TRUE"));
 
-			return true;
-		}
+		return true;
+	}
 }
 #elif (STORAGE_TYPE == STORAGE_SPIFFS || STORAGE_TYPE == STORAGE_LITTLEFS || STORAGE_TYPE == STORAGE_FFAT )
   bool FtpServer::openFile( const char * path, const char * readType ) {
@@ -2742,7 +2832,12 @@ bool FtpServer::getFileModTime( uint16_t * pdate, uint16_t * ptime )
 		if(myFileOut) {
 			while (myFileIn.available() > 0)
 			      {
-			        int i = myFileIn.readBytes((char*)buf, FTP_BUF_SIZE);
+			        // int i = myFileIn.readBytes((char*)buf, FTP_BUF_SIZE);
+#ifdef DYNAMIC_TRANSFER_BUFFER
+				int i = myFileIn.readBytes((char*)buf, ftp_buf_size);
+#else
+				int i = myFileIn.readBytes((char*)buf, FTP_BUF_SIZE);
+#endif
 			        myFileOut.write(buf, i);
 			      }
 			      // done, close the destination file
@@ -2771,6 +2866,4 @@ bool FtpServer::getFileModTime( uint16_t * pdate, uint16_t * ptime )
 		return remove( path );
   };
 #endif
-
-
 

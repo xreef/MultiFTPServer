@@ -549,6 +549,7 @@ class FtpServer
 {
 public:
     FtpServer( uint16_t _cmdPort = FTP_CMD_PORT, uint16_t _pasvPort = FTP_DATA_PORT_PASV, uint8_t _maxSessions = FTP_MAX_SESSIONS );
+    ~FtpServer(); // <-- DESTRUCTOR ADDED
 
   void    begin( const char * _user, const char * _pass, const char * welcomeMessage = "Welcome to Simply FTP server" );
   void    begin( const char * welcomeMessage = "Welcome to Simply FTP server" );
@@ -744,8 +745,14 @@ private:
 
   static bool anonymousConnection;
 
+#ifdef DYNAMIC_TRANSFER_BUFFER
+  uint8_t* buf;                       // data buffer for transfers (dynamic)
+  size_t   ftp_buf_size;              // size of the dynamic buffer
+#else
   uint8_t  __attribute__((aligned(4))) // need to be aligned to 32bit for Esp8266 SPIClass::transferBytes()
-           buf[ FTP_BUF_SIZE ];       // data buffer for transfers
+           buf[ FTP_BUF_SIZE ];       // data buffer for transfers (static)
+#endif
+
   char     cmdLine[ FTP_CMD_SIZE ];   // where to store incoming char from client
   char     cwdName[ FTP_CWD_SIZE ];   // name of current directory
   char     rnfrName[ FTP_CWD_SIZE ];  // name of file for RNFR command

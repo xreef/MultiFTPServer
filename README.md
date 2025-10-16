@@ -157,6 +157,7 @@ See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, 
 
 ## 📝 Changelog (excerpt)
 - 2025-10-13 2.2.0 Multiple fix, BUS management and update #2
+- 2025-10-16 Fix: Do not force FILE_WRITE mapping for read operations on some SD implementations — prevents files opened for download (RETR) from being positioned at EOF (fix #84)
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
 - 2025-01-13 2.1.11 Add addictional LOG to prevent multiple user issues

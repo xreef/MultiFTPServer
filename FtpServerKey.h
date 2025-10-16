@@ -22,6 +22,9 @@
 #ifndef FTP_SERVER_CONFIG_H
 #define FTP_SERVER_CONFIG_H
 
+// Uncomment to enable dynamic transfer buffer
+#define DYNAMIC_TRANSFER_BUFFER
+
 // Uncomment to enable printing out nice debug messages.
 #define FTP_SERVER_DEBUG
 // #define FTP_ADDITIONAL_DEBUG
