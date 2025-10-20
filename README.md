@@ -156,7 +156,7 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
-- 2025-10-13 2.2.0 Multiple fix, BUS management and update #2
+- 2025-10-13 2.2.0 — Improvements: ensure file pointers start on read, increased passive data connection wait time, improved FFat directory create/remove, configurable free-space check before uploads, optional FTP debug (disabled by default)
 - 2025-10-16 Fix: Do not force FILE_WRITE mapping for read operations on some SD implementations — prevents files opened for download (RETR) from being positioned at EOF (fix #84)
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands

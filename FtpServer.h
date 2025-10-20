@@ -573,8 +573,8 @@ public:
 private:
   void	  _handleFTP();
 
-  void (*_callback)(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace){};
-  void (*_transferCallback)(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize){};
+  static void (*_callback)(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace);
+  static void (*_transferCallback)(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize);
 
   void    iniVariables();
   void    clientConnected();
@@ -619,19 +619,72 @@ private:
   }
   bool     exists( const char * path ) {
 #if STORAGE_TYPE == STORAGE_SPIFFS || (STORAGE_TYPE == STORAGE_SD && FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242)
-	  if (strcmp(path, "/") == 0) return true;
+      if (strcmp(path, "/") == 0) return true;
 #endif
 #if STORAGE_TYPE == STORAGE_FFAT || (STORAGE_TYPE == STORAGE_LITTLEFS && defined(ESP32))
-	  FTP_DIR f = STORAGE_MANAGER.open(path, "r");
-	  return (f == true);
+      // Try to open the path directly
+      FTP_DIR f = STORAGE_MANAGER.open(path, "r");
+      if (f == true) return true;
+      // Some FFat builds mount at /ffat. Try with that prefix if not already present
+      if (strncmp(path, "/ffat", 6) != 0) {
+          char alt[FTP_CWD_SIZE];
+          snprintf(alt, sizeof(alt), "/ffat%s", path);
+          FTP_DIR f2 = STORAGE_MANAGER.open(alt, "r");
+          return (f2 == true);
+      }
+      return false;
 #else
-	  return STORAGE_MANAGER.exists( path );
+      return STORAGE_MANAGER.exists( path );
 #endif
-  };
+    };
   bool     remove( const char * path ) { return STORAGE_MANAGER.remove( path ); };
 #if STORAGE_TYPE == STORAGE_SPIFFS
   bool     makeDir( const char * path ) { return false; };
   bool     removeDir( const char * path ) { return false; };
+#elif STORAGE_TYPE == STORAGE_FFAT
+  // FFat on ESP32 uses VFS; use POSIX mkdir/rmdir to ensure directory creation works
+  #include <sys/stat.h>
+  #include <errno.h>
+  bool     makeDir( const char * path ) {
+      DEBUG_IDX; DEBUG_PRINT(F("FFAT makeDir try: ")); DEBUG_PRINTLN(path);
+      // Try direct mkdir
+      if (::mkdir(path, 0777) == 0) {
+          DEBUG_IDX; DEBUG_PRINTLN(F("FFAT mkdir direct OK"));
+          return true;
+      }
+      DEBUG_IDX; DEBUG_PRINT(F("FFAT mkdir direct errno: ")); DEBUG_PRINTLN((int)errno);
+      if (errno == EEXIST) {
+          DEBUG_IDX; DEBUG_PRINTLN(F("FFAT mkdir direct already exists"));
+          return true;
+      }
+      // Try with /ffat prefix (some FFat mount points use /ffat)
+      if (strncmp(path, "/ffat", 6) != 0) {
+          char alt[FTP_CWD_SIZE];
+          snprintf(alt, sizeof(alt), "/ffat%s", path);
+          DEBUG_IDX; DEBUG_PRINT(F("FFAT makeDir try alt: ")); DEBUG_PRINTLN(alt);
+          if (::mkdir(alt, 0777) == 0) {
+              DEBUG_IDX; DEBUG_PRINTLN(F("FFAT mkdir alt OK"));
+              return true;
+          }
+          DEBUG_IDX; DEBUG_PRINT(F("FFAT mkdir alt errno: ")); DEBUG_PRINTLN((int)errno);
+          if (errno == EEXIST) {
+              DEBUG_IDX; DEBUG_PRINTLN(F("FFAT mkdir alt already exists"));
+              return true;
+          }
+      }
+      DEBUG_IDX; DEBUG_PRINTLN(F("FFAT mkdir failed"));
+      return false;
+  };
+  bool     removeDir( const char * path ) {
+      if (::rmdir(path) == 0) return true;
+      // try with /ffat prefix
+      if (strncmp(path, "/ffat", 6) != 0) {
+          char alt[FTP_CWD_SIZE];
+          snprintf(alt, sizeof(alt), "/ffat%s", path);
+          if (::rmdir(alt) == 0) return true;
+      }
+      return false;
+  };
 #else
   bool     makeDir( const char * path ) { return STORAGE_MANAGER.mkdir( path ); };
   bool     removeDir( const char * path ) { return STORAGE_MANAGER.rmdir( path ); };

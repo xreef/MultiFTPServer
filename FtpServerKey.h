@@ -22,11 +22,8 @@
 #ifndef FTP_SERVER_CONFIG_H
 #define FTP_SERVER_CONFIG_H
 
-// Uncomment to enable dynamic transfer buffer
-#define DYNAMIC_TRANSFER_BUFFER
-
 // Uncomment to enable printing out nice debug messages.
-#define FTP_SERVER_DEBUG
+// #define FTP_SERVER_DEBUG
 // #define FTP_ADDITIONAL_DEBUG
 
 // Define where debug output will be printed.
@@ -124,13 +121,21 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 	#define FTP_TIME_OUT  5 * 60
 #endif
 
-
 // Wait for authentication for 10 seconds (expressed in seconds)
 #ifndef FTP_AUTH_TIME_OUT
 	#define FTP_AUTH_TIME_OUT 10
 #endif
 
+// Minimum free space (bytes) required to accept an upload when FTP_CHECK_SPACE_ON_UPLOAD is enabled
+#ifndef FTP_MIN_FREE_SPACE_ON_UPLOAD
+	// Default: 16 KB, can be overridden in project build flags or before including the library
+	#define FTP_MIN_FREE_SPACE_ON_UPLOAD 16384
+#endif
 
+// Uncomment to enable dynamic transfer buffer
+#if defined(ESP32) || defined(ESP8266)
+	#define DYNAMIC_TRANSFER_BUFFER
+#endif
 
 // Size of file buffer for read/write
 // Transfer speed depends of this value
