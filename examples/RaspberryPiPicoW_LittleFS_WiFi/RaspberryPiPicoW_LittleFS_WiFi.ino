@@ -28,6 +28,20 @@ void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int t
       break;
     case FTP_FREE_SPACE_CHANGE:
       Serial.printf("FTP: Free space change, free %u of %u!\n", freeSpace, totalSpace);
+      // Use callback-provided values (bytes) rather than calling filesystem APIs
+      Serial.print("Total bytes (from callback): ");
+      Serial.print(totalSpace);
+      Serial.println(" bytes");
+      Serial.print("Free bytes (from callback):  ");
+      Serial.print(freeSpace);
+      Serial.println(" bytes");
+      // Human-readable
+      Serial.print("Free KB: ");
+      Serial.print(freeSpace / 1024);
+      Serial.println(" KB");
+      Serial.print("Total KB: ");
+      Serial.print(totalSpace / 1024);
+      Serial.println(" KB");
       break;
     default:
       break;

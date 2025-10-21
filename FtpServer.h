@@ -719,24 +719,24 @@ private:
 #if STORAGE_TYPE == STORAGE_SPIFFS || STORAGE_TYPE == STORAGE_LITTLEFS
 #if ESP8266 || ARDUINO_ARCH_RP2040
   uint32_t capacity() {
-	  FSInfo fi;
-	  STORAGE_MANAGER.info(fi);
+      FSInfo fi;
+      STORAGE_MANAGER.info(fi);
 
-	  return fi.totalBytes >> 1;
+      return fi.totalBytes; // return bytes (previously shifted >>1)
   };
   uint32_t free() {
-	  FSInfo fi;
-	  STORAGE_MANAGER.info(fi);
+      FSInfo fi;
+      STORAGE_MANAGER.info(fi);
 
-	  return (fi.totalBytes - fi.usedBytes) >> 1;
+      return (fi.totalBytes - fi.usedBytes); // return bytes (previously shifted >>1)
   };
 #else
   uint32_t capacity() {
-	  return STORAGE_MANAGER.totalBytes() >> 1;
+      return STORAGE_MANAGER.totalBytes(); // return bytes (previously shifted >>1)
   };
   uint32_t free() {
-	  return (STORAGE_MANAGER.totalBytes() -
-			  STORAGE_MANAGER.usedBytes()) >> 1;
+      return (STORAGE_MANAGER.totalBytes() -
+              STORAGE_MANAGER.usedBytes()); // return bytes (previously shifted >>1)
   };
 #endif
 #elif STORAGE_TYPE == STORAGE_SD || STORAGE_TYPE == STORAGE_SD_MMC
@@ -744,11 +744,11 @@ private:
   uint32_t free() { return true; };
 #elif STORAGE_TYPE == STORAGE_SEEED_SD
   uint32_t capacity() {
-	  return STORAGE_MANAGER.totalBytes() >> 1;
+      return STORAGE_MANAGER.totalBytes(); // return bytes (previously shifted >>1)
   };
   uint32_t free() {
-	  return (STORAGE_MANAGER.totalBytes() -
-			  STORAGE_MANAGER.usedBytes()) >> 1;
+      return (STORAGE_MANAGER.totalBytes() -
+              STORAGE_MANAGER.usedBytes()); // return bytes (previously shifted >>1)
   };
 #elif STORAGE_TYPE == STORAGE_SDFAT1
   uint32_t capacity() { return STORAGE_MANAGER.card()->cardSize() >> 1; };

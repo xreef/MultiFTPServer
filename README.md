@@ -156,7 +156,7 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
-- 2025-10-13 2.2.0 — Improvements: ensure file pointers start on read, increased passive data connection wait time, improved FFat directory create/remove, configurable free-space check before uploads, optional FTP debug (disabled by default)
+- 2025-10-13 2.2.0 — Improve file-open handling (ensure reads start at file beginning), increase passive data connection wait time, add robust FFat dir create/remove (fallback to /ffat and POSIX), add configurable minimum free-space check before uploads, make FTP debug optional (disabled by default)
 - 2025-10-16 Fix: Do not force FILE_WRITE mapping for read operations on some SD implementations — prevents files opened for download (RETR) from being positioned at EOF (fix #84)
 - 2025-02-11 2.1.11 Management of relative and absolute path in command prompt (./ ../ /)
 - 2025-01-28 2.1.11 Fix REST and add ALLO, and STAT commands
@@ -203,3 +203,9 @@ GitHub: [@xreef](https://github.com/xreef)
 ⭐ If this library helped your project, please star the repository on GitHub!
 
 Made with ❤️ by Renzo Mischianti
+
+## Notes on the free-space callback
+
+- The `FTP_FREE_SPACE_CHANGE` callback receives sizes in bytes via the `freeSpace` and `totalSpace` parameters (unsigned int). Use these variables directly in your callback handler.
+- Avoid calling filesystem API methods to recompute totals inside the callback as their values or units may differ from the callback parameters; to compute free bytes from filesystem totals, use `totalBytes() - usedBytes()`.
+- For a human-readable display, divide bytes by 1024 to get KB (or by 1024*1024 for MB).
