@@ -554,27 +554,36 @@ public:
   void    begin( const char * _user, const char * _pass, const char * welcomeMessage = "Welcome to Simply FTP server" );
   void    begin( const char * welcomeMessage = "Welcome to Simply FTP server" );
 
-  void 	  end();
-  void 	  setLocalIp(IPAddress localIp);
+  void    end();
+  void    setLocalIp(IPAddress localIp);
   void    credentials( const char * _user, const char * _pass );
-    void	  handleFTP();
+    void    handleFTP();
     uint8_t getMaxSessions();
 
-	void setCallback(void (*_callbackParam)(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace) )
+	void setCallback(void (*_callbackParam)(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpace) )
 	{
 		_callback = _callbackParam;
 	}
 
-	void setTransferCallback(void (*_transferCallbackParam)(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize) )
+	void setTransferCallback(void (*_transferCallbackParam)(FtpTransferOperation ftpOperation, const char* name, uint32_t transferredSize) )
 	{
 		_transferCallback = _transferCallbackParam;
 	}
 
+	// Debug helpers: allow sketch to check if callbacks were registered
+	bool hasCallback() const { return FtpServer::_callback != nullptr; }
+	bool hasTransferCallback() const { return FtpServer::_transferCallback != nullptr; }
+
+	// Test helper: invoke registered callbacks with dummy values so user can verify
+	// from their sketch that callbacks are properly registered and callable.
+	// This does not modify internal state and is safe to call from setup() for diagnostics.
+	void testInvokeCallbacks();
+
 private:
   void	  _handleFTP();
 
-  static void (*_callback)(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace);
-  static void (*_transferCallback)(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize);
+  void (*_callback)(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpace){};
+  void (*_transferCallback)(FtpTransferOperation ftpOperation, const char* name, uint32_t transferredSize){};
 
   void    iniVariables();
   void    clientConnected();

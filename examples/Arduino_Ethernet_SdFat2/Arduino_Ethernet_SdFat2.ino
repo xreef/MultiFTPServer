@@ -52,13 +52,41 @@ IPAddress serverIp( 0, 0, 0, 0 );
 //  necessary with some clients to reply them with the server's external ip address
 // IPAddress externalIp( 192, 168, 1, 2 );
 
-ArduinoOutStream cout( Serial );
+// Use Serial directly for output instead of ArduinoOutStream/cout
 
+// Callback called on connect/disconnect and when free space changes
+void _callback(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpace) {
+  // Log basic info to serial
+  Serial.print(F("[FTP callback] op="));
+  Serial.print((int)ftpOperation);
+  Serial.print(F(" free="));
+  Serial.print((unsigned long)freeSpace);
+  Serial.print(F(" total="));
+  Serial.println((unsigned long)totalSpace);
+
+  // ftpOperation values include:
+  // FTP_CONNECT, FTP_DISCONNECT, FTP_FREE_SPACE_CHANGE
+  // Add custom handling here if needed (e.g., LED, status output)
+}
+
+// Callback called during file transfers
+void _transferCallback(FtpTransferOperation ftpOperation, const char* name, uint32_t transferredSize) {
+  Serial.print(F("[FTP transfer] op=")); Serial.print((int)ftpOperation);
+  Serial.print(F(" name=")); Serial.print(name);
+  Serial.print(F(" size=")); Serial.println((unsigned long)transferredSize);
+
+  // ftpOperation values include:
+  // FTP_UPLOAD_START, FTP_UPLOAD, FTP_DOWNLOAD_START, FTP_DOWNLOAD,
+  // FTP_TRANSFER_STOP, FTP_TRANSFER_ERROR
+  // Add custom handling here if needed (e.g., progress indicator)
+}
 
 void setup()
 {
   Serial.begin( 115200 );
-  cout << F("=== Test of FTP Server with SdFat ") << SD_FAT_VERSION << F(" file system ===") << endl;
+  Serial.print(F("=== Test of FTP Server with SdFat "));
+  Serial.print(SD_FAT_VERSION);
+  Serial.println(F(" file system ==="));
 
   // If other chips are connected to SPI bus, set to high the pin connected
   // to their CS before initializing Flash memory
@@ -68,22 +96,23 @@ void setup()
   digitalWrite( 10, HIGH );
 
   // Mount the SD card memory
-  cout << F("Mount the SD card memory... ");
+  Serial.print(F("Mount the SD card memory... "));
   if( ! sd.begin( CS_SDCARD, SD_SCK_MHZ( 50 )))
   {
-    cout << F("Unable to mount SD card") << endl;
-    while( true ) ;
+    Serial.println(F("Unable to mount SD card"));
+     while( true ) ;
   }
   pinMode( CS_SDCARD, OUTPUT );
   digitalWrite( CS_SDCARD, HIGH );
-  cout << F("ok") << endl;
+  Serial.println(F("ok"));
 
   // Show capacity and free space of SD card
-  cout << F("Capacity of card:   ") << long( sd.card()->sectorCount() >> 1 )
-       << F(" kBytes") << endl;
-  cout << F("Free space on card: ")
-       << long( sd.vol()->freeClusterCount() * sd.vol()->sectorsPerCluster() >> 1 )
-       << F(" kBytes") << endl;
+  Serial.print(F("Capacity of card:   "));
+  Serial.print(long( sd.card()->sectorCount() >> 1 ));
+  Serial.println(F(" kBytes"));
+  Serial.print(F("Free space on card: "));
+  Serial.print(long( sd.vol()->freeClusterCount() * sd.vol()->sectorsPerCluster() >> 1 ));
+  Serial.println(F(" kBytes"));
 
   // Send reset to Ethernet module
   if( W5x00_RESET > -1 )
@@ -96,38 +125,55 @@ void setup()
   }
 
   // Initialize the network
-  cout << F("Initialize ethernet module ... ");
-  if( serverIp[0] != 0 )
-    Ethernet.begin( mac, serverIp );
-  else if( Ethernet.begin( mac ) == 0 )
-  {
-    cout << F("failed!") << endl;
-    while( true ) ;
-  }
-  uint16_t wizModule[] = { 0, 5100, 5200, 5500 };
-  cout << F("W") << wizModule[ Ethernet.hardwareStatus()] << F(" ok") << endl;
-  serverIp = Ethernet.localIP();
-  cout << F("IP address of server: ")
-       << int( serverIp[0]) << "." << int( serverIp[1]) << "."
-       << int( serverIp[2]) << "." << int( serverIp[3]) << endl;
+  Serial.print(F("Initialize ethernet module ... "));
+   if( serverIp[0] != 0 )
+     Ethernet.begin( mac, serverIp );
+   else if( Ethernet.begin( mac ) == 0 )
+   {
+    Serial.println(F("failed!"));
+     while( true ) ;
+   }
+   uint16_t wizModule[] = { 0, 5100, 5200, 5500 };
+   Serial.print(F("W")); Serial.print(wizModule[ Ethernet.hardwareStatus()]); Serial.println(F(" ok"));
+   serverIp = Ethernet.localIP();
+   Serial.print(F("IP address of server: "));
+   Serial.print(int( serverIp[0])); Serial.print('.'); Serial.print(int( serverIp[1])); Serial.print('.');
+   Serial.print(int( serverIp[2])); Serial.print('.'); Serial.println(int( serverIp[3]));
+
+  // Register callbacks so user code receives FTP events and transfer notifications
+  ftpSrv.setCallback(_callback);
+  ftpSrv.setTransferCallback(_transferCallback);
+
+  // Verifica che le callback siano state registrate (helper aggiunti alla libreria)
+  Serial.print(F("hasCallback: "));
+  Serial.println( ftpSrv.hasCallback() ? F("yes") : F("no") );
+  Serial.print(F("hasTransferCallback: "));
+  Serial.println( ftpSrv.hasTransferCallback() ? F("yes") : F("no") );
+
+  // Diagnostic: force-invoke callbacks to verify registration and runtime invocation
+  // (calls will print messages to Serial). Remove or keep for testing.
+  ftpSrv.testInvokeCallbacks();
 
   // Initialize the FTP server
   ftpSrv.begin("user","password");
   // ftpSrv.init( externalIp );
   // ftpSrv.init( IPAddress( 11, 22, 33, 44 ));
 
+  Serial.println(F("FTP server initialized"));
+
   // Default username and password are set to 'arduino' and 'test'
   //  but can then be changed by calling ftpSrv.credentials()
   // ftpSrv.credentials( "myname", "123" );
 
-  cout << F("Free stack: ") << FreeStack() << endl;
+  Serial.print(F("Free stack: "));
+  Serial.println(FreeStack());
 
-  cout << "Viaaa!";
-}
+  Serial.print("Viaaa!");
+ }
 
 void loop()
 {
+  // chiamata principale alla libreria
   ftpSrv.handleFTP();
 
-  // more processes...
 }

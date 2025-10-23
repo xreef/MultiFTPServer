@@ -48,15 +48,12 @@
 
 #include <FtpServer.h>
 #include <ctype.h>
+#include <new>
 
 // Static member definitions required by the linker
 IPAddress FtpServer::localIp = IPAddress(0,0,0,0);
 FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::ftpServer = nullptr;
 FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::dataServer = nullptr;
-
-// Callback static definitions
-void (*FtpServer::_callback)(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace) = nullptr;
-void (*FtpServer::_transferCallback)(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize) = nullptr;
 
 bool FtpServer::anonymousConnection = false;
 
@@ -218,8 +215,10 @@ FtpServer::FtpServer( uint16_t _cmdPort, uint16_t _pasvPort, uint8_t _maxSession
   idx = 0;
   FtpServer::maxSessions = 1;
   for (uint8_t i = 1; i < _maxSessions; i++) {
-    FtpServer::sessions[i] = new FtpServer(_cmdPort, _pasvPort);
-    if (FtpServer::sessions[i] == nullptr) break;
+    void* mem = malloc(sizeof(FtpServer));
+    if (mem == NULL) break;
+    FtpServer::sessions[i] = static_cast<FtpServer*>(mem);
+    new (FtpServer::sessions[i]) FtpServer(_cmdPort, _pasvPort);
     FtpServer::sessions[i]->idx = i;
     FtpServer::maxSessions = i + 1;
   }
@@ -234,6 +233,48 @@ FtpServer::~FtpServer()
 		buf = nullptr;
 	}
 #endif
+
+    // Only the root instance (sessions[0]) is responsible for freeing the other sessions
+    if (FtpServer::sessions != nullptr && FtpServer::sessions[0] == this) {
+        // Destroy placement-new created session objects and free their memory
+        for (uint8_t i = 1; i < FtpServer::maxSessions; ++i) {
+            if (FtpServer::sessions[i] != nullptr && FtpServer::sessions[i] != this) {
+                // Explicitly call destructor for placement-new object
+                FtpServer::sessions[i]->~FtpServer();
+                // Free the raw memory allocated with malloc
+                ::free(FtpServer::sessions[i]);
+                FtpServer::sessions[i] = nullptr;
+            }
+        }
+        // Free the sessions array itself
+        ::free(FtpServer::sessions);
+        FtpServer::sessions = nullptr;
+        FtpServer::maxSessions = 0;
+
+        // Delete network server objects if present
+        if (FtpServer::ftpServer) {
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
+#endif
+            delete FtpServer::ftpServer;
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+            FtpServer::ftpServer = nullptr;
+        }
+        if (FtpServer::dataServer) {
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
+#endif
+            delete FtpServer::dataServer;
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+            FtpServer::dataServer = nullptr;
+        }
+    }
 }
 
 void FtpServer::begin( const char * _user, const char * _pass, const char * _welcomeMessage )
@@ -347,6 +388,7 @@ void FtpServer::end()
     DEBUG_IDX; DEBUG_PRINTLN(F("Stop server!"));
 
     if (FtpServer::_callback) {
+      DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_DISCONNECT (end())"));
   	  FtpServer::_callback(FTP_DISCONNECT, free(), capacity());
     }
 
@@ -393,6 +435,32 @@ void FtpServer::handleFTP() {
   for (uint8_t i = 0; i < FtpServer::maxSessions; i++) {
     FtpServer::sessions[i]->_handleFTP();
   }
+}
+
+// Test helper implementation: invoke registered callbacks with dummy values for diagnostics
+void FtpServer::testInvokeCallbacks()
+{
+    if (FtpServer::_callback) {
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _callback: FTP_CONNECT"));
+        FtpServer::_callback(FTP_CONNECT, free(), capacity());
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _callback: FTP_DISCONNECT"));
+        FtpServer::_callback(FTP_DISCONNECT, free(), capacity());
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _callback: FTP_FREE_SPACE_CHANGE"));
+        FtpServer::_callback(FTP_FREE_SPACE_CHANGE, free(), capacity());
+    } else {
+        DEBUG_PRINTLN(F("[FtpServer] no _callback registered"));
+    }
+
+    if (FtpServer::_transferCallback) {
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _transferCallback: FTP_UPLOAD_START"));
+        FtpServer::_transferCallback(FTP_UPLOAD_START, "test_upload.bin", 0);
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _transferCallback: FTP_DOWNLOAD_START"));
+        FtpServer::_transferCallback(FTP_DOWNLOAD_START, "test_download.bin", 0);
+        DEBUG_PRINTLN(F("[FtpServer] testInvokeCallbacks calling _transferCallback: FTP_TRANSFER_STOP"));
+        FtpServer::_transferCallback(FTP_TRANSFER_STOP, "test.bin", 123);
+    } else {
+        DEBUG_PRINTLN(F("[FtpServer] no _transferCallback registered"));
+    }
 }
 
 void FtpServer::_handleFTP() {
@@ -471,6 +539,7 @@ void FtpServer::_handleFTP() {
 				millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
 		} else if (!client.connected()) {
 			if (FtpServer::_callback) {
+			  DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_DISCONNECT (no client)"));
 			  FtpServer::_callback(FTP_DISCONNECT, free(), capacity());
 			}
 
@@ -484,11 +553,12 @@ void FtpServer::_handleFTP() {
 		} else if (transferStage == FTP_Store) // Store data
 		{
 			if (!doStore()) {
-		    	  if (FtpServer::_callback) {
-		    		  FtpServer::_callback(FTP_FREE_SPACE_CHANGE, free(), capacity());
-		    	  }
+			  if (FtpServer::_callback) {
+				  DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_FREE_SPACE_CHANGE (doStore)"));
+				  FtpServer::_callback(FTP_FREE_SPACE_CHANGE, free(), capacity());
+			  }
 
-				transferStage = FTP_Close;
+			transferStage = FTP_Close;
 			}
 		} else if (transferStage == FTP_List || transferStage == FTP_Nlst) // LIST or NLST
 				{
@@ -541,6 +611,7 @@ void FtpServer::clientConnected()
   client.print  (F("220 --   Version ")); client.print(FTP_SERVER_VERSION); client.println(F("   --"));
   iCL = 0;
   if (FtpServer::_callback) {
+      DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_CONNECT"));
 	  FtpServer::_callback(FTP_CONNECT, free(), capacity());
   }
 
@@ -554,6 +625,7 @@ void FtpServer::disconnectClient()
   client.println(F("221 Goodbye") );
 
   if (FtpServer::_callback) {
+      DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_DISCONNECT (disconnectClient())"));
 	  FtpServer::_callback(FTP_DISCONNECT, free(), capacity());
   }
 
@@ -899,13 +971,14 @@ bool FtpServer::processCommand()
     char path[ FTP_CWD_SIZE ]{ 0 };
     if( haveParameter() && makeExistsPath( path )) {
       if( remove( path )) {
-    	  if (FtpServer::_callback) {
-    		  FtpServer::_callback(FTP_FREE_SPACE_CHANGE, free(), capacity());
-    	  }
+  	  if (FtpServer::_callback) {
+		DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_FREE_SPACE_CHANGE (DELE)"));
+		FtpServer::_callback(FTP_FREE_SPACE_CHANGE, free(), capacity());
+	  }
 
         client.print( F("250 Deleted ") ); client.println( parameter );
       } else {
-    	  client.print( F("450 Can't delete ") ); client.println( parameter );
+  	  client.print( F("450 Can't delete ") ); client.println( parameter );
       }
     }
   }
@@ -1004,9 +1077,10 @@ bool FtpServer::processCommand()
       	file.seek(0);
     	  DEBUG_PRINT( F(" Sending ") ); DEBUG_PRINT( parameter ); DEBUG_PRINT( F(" size ") ); DEBUG_PRINTLN( long( fileSize( file ))  );
 
-		  if (FtpServer::_transferCallback) {
-			  FtpServer::_transferCallback(FTP_DOWNLOAD_START, parameter,  long( fileSize( file )));
-		  }
+	  if (FtpServer::_transferCallback) {
+		DEBUG_PRINTLN(F("[FtpServer] invoking _transferCallback: FTP_DOWNLOAD_START"));
+		FtpServer::_transferCallback(FTP_DOWNLOAD_START, parameter,  long( fileSize( file )));
+	  }
 
 
         client.print( F("150-Connected to port ") ); client.println( dataPort );
@@ -1014,6 +1088,10 @@ bool FtpServer::processCommand()
         millisBeginTrans = millis();
         bytesTransfered = 0;
         transferStage = FTP_Retrieve;
+
+        if (FtpServer::_transferCallback) {
+          FtpServer::_transferCallback(FTP_DOWNLOAD_START, parameter, bytesTransfered);
+        }
       }
     }
   }
@@ -1127,10 +1205,9 @@ bool FtpServer::processCommand()
         bytesTransfered = 0;
         transferStage = FTP_Store;
 
-		  if (FtpServer::_transferCallback) {
-
-			  FtpServer::_transferCallback(FTP_UPLOAD_START, parameter, bytesTransfered);
-		  }
+	  if (FtpServer::_transferCallback) {
+		FtpServer::_transferCallback(FTP_UPLOAD_START, parameter, bytesTransfered);
+	  }
         }
       }
     }
@@ -1391,7 +1468,7 @@ bool FtpServer::processCommand()
 //       {
 // 		#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
 //     	  	  data = FtpServer::dataServer->available();
-// 		#elif (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242)) // || defined(ARDUINO_ARCH_RP2040)
+// 		#elif (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242))
 // 			if( FtpServer::dataServer->hasClient())
 // 			{
 // 			  data.stop();
@@ -2150,19 +2227,21 @@ void FtpServer::closeTransfer()
 {
   uint32_t deltaT = (int32_t) ( millis() - millisBeginTrans );
 
+  // Capture filename before closing file to ensure callback gets valid name
+  String fname = getFileName(&file);
+
   // Stop data connection and close file before sending response
   file.close();
   data.stop();
 
   if( deltaT > 0 && bytesTransfered > 0 )
   {
-	  DEBUG_IDX; DEBUG_PRINT( F(" Transfer completed in ") ); DEBUG_PRINT( deltaT ); DEBUG_PRINTLN( F(" ms, ") );
-	  DEBUG_IDX; DEBUG_PRINT( bytesTransfered / deltaT ); DEBUG_PRINTLN( F(" kbytes/s") );
+    DEBUG_IDX; DEBUG_PRINT( F(" Transfer completed in ") ); DEBUG_PRINT( deltaT ); DEBUG_PRINTLN( F(" ms, ") );
+    DEBUG_IDX; DEBUG_PRINT( bytesTransfered / deltaT ); DEBUG_PRINTLN( F(" kbytes/s") );
 
-	  if (FtpServer::_transferCallback) {
-		  FtpServer::_transferCallback(FTP_TRANSFER_STOP, getFileName(&file).c_str(), bytesTransfered);
-	  }
-
+    if (FtpServer::_transferCallback) {
+      FtpServer::_transferCallback(FTP_TRANSFER_STOP, fname.c_str(), bytesTransfered);
+    }
 
     client.println(F("226-File successfully transferred") );
     client.print( F("226 ") ); client.print( deltaT ); client.print( F(" ms, ") );
@@ -2176,8 +2255,11 @@ void FtpServer::abortTransfer()
 {
   if( transferStage != FTP_Close )
   {
+	  // Capture filename before any file close to ensure callback receives a valid pointer during call
+	  String fname = getFileName(&file);
+
 	  if (FtpServer::_transferCallback) {
-		  FtpServer::_transferCallback(FTP_TRANSFER_ERROR, getFileName(&file).c_str(), bytesTransfered);
+		  FtpServer::_transferCallback(FTP_TRANSFER_ERROR, fname.c_str(), bytesTransfered);
 	  }
 
 	  file.close();
@@ -2263,6 +2345,19 @@ int32_t FtpServer::readChar()
     if( rc > 0 )
       for( uint8_t i = 0 ; i < strlen( command ); i ++ )
         command[ i ] = toupper( command[ i ] );
+
+    // Nuovo: loggare sempre il comando e il parametro per debug
+    if (rc > 0) {
+      if (parameter != nullptr) {
+        DEBUG_PRINT(F("[FtpServer] RCV CMD: "));
+        DEBUG_PRINT(command);
+        DEBUG_PRINT(F(" PARAM: "));
+        DEBUG_PRINTLN(parameter);
+      } else {
+        DEBUG_PRINT(F("[FtpServer] RCV CMD: "));
+        DEBUG_PRINTLN(command);
+      }
+    }
     if( rc == -2 )
     {
       iCL = 0;
@@ -2384,7 +2479,7 @@ bool FtpServer::makePath( char * fullName, char * param )
     // Rimuovi la slash finale da workingDir se presente (salvaguardando la root)
     int len = strlen( workingDir );
     if (len > 1 && workingDir[len - 1] == '/' ) {
-      workingDir[len - 1] = 0;
+      workingDir[len - 1 ] = 0;
     }
     // Trova l'ultima slash per individuare il livello superiore
     char *lastSlash = strrchr( workingDir, '/' );
@@ -2895,6 +2990,7 @@ bool FtpServer::getFileModTime( uint16_t * pdate, uint16_t * ptime )
 	#else
 		return dir.getLastWrite();
 	#endif
+
 #elif STORAGE_TYPE == STORAGE_SDFAT1
   dir_t d;
 

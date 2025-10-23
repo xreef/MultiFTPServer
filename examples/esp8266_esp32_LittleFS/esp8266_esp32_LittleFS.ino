@@ -24,7 +24,7 @@ const char* password = "<YOUR-PASSWD>";
 
 FtpServer ftpSrv;   //set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
 
-void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace){
+void _callback(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpace){
   switch (ftpOperation) {
     case FTP_CONNECT:
       Serial.println(F("FTP: Connected!"));
@@ -53,7 +53,7 @@ void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int t
       break;
   }
 };
-void _transferCallback(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize){
+void _transferCallback(FtpTransferOperation ftpOperation, const char* name, uint32_t transferredSize){
   switch (ftpOperation) {
     case FTP_UPLOAD_START:
       Serial.println(F("FTP: Upload start!"));

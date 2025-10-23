@@ -89,7 +89,7 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 // Standard AVR Arduino configuration
 #ifndef DEFAULT_FTP_SERVER_NETWORK_TYPE_ARDUINO
 	#define DEFAULT_FTP_SERVER_NETWORK_TYPE_ARDUINO 	NETWORK_W5100
-	#define DEFAULT_STORAGE_TYPE_ARDUINO 				STORAGE_SD
+	#define DEFAULT_STORAGE_TYPE_ARDUINO 				STORAGE_SDFAT2
 #endif
 // STM32 configuration
 #ifndef DEFAULT_FTP_SERVER_NETWORK_TYPE_STM32

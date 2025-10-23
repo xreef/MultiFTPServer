@@ -31,8 +31,8 @@ SdFs sd;
 
 FtpServer ftpSrv;
 
-const char *ssid = "reef-casa-sopra";
-const char *password = "aabbccdd77";
+const char *ssid = "<SSID>";
+const char *password = "<PASSWD>";
 
 #define MAIN_TOP 110
 
@@ -40,7 +40,7 @@ const char *password = "aabbccdd77";
 #define FREE_SPACE_PIE_Y MAIN_TOP+40
 #define FREE_SPACE_PIE_RADIUS 50
 
-void freeSpacePieData(unsigned int freeSpace, unsigned int totalSpace) {
+void freeSpacePieData(uint32_t freeSpace, uint32_t totalSpace) {
 	int pieFree = 360 - (freeSpace * 360 / totalSpace);
 
     fillSegment(FREE_SPACE_PIE_X, FREE_SPACE_PIE_Y, 0, pieFree, FREE_SPACE_PIE_RADIUS, TFT_RED);
@@ -95,7 +95,7 @@ char* subString(const char *s, int index, int n){
 }
 
 
-void fileTransfer(FtpTransferOperation ftpOperation, const char* filename, unsigned int transferredSize) {
+void fileTransfer(FtpTransferOperation ftpOperation, const char* filename, uint32_t transferredSize) {
 	int yoffset = 2;
 
     tft.setCursor(20, MAIN_TOP+(FREE_SPACE_PIE_RADIUS*2)+yoffset, 2);
@@ -190,7 +190,7 @@ void wifiStrenght (int8_t RSSI, bool connection = false) {
 	}
 }
 
-void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace){
+void _callback(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpace){
 	Serial.print(">>>>>>>>>>>>>>> _callback " );
 	Serial.print(ftpOperation);
 	/* FTP_CONNECT,
@@ -209,7 +209,7 @@ void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int t
 	if (ftpOperation == FTP_CONNECT) connectedDisconnected(true);
 	if (ftpOperation == FTP_DISCONNECT) connectedDisconnected(false);
 };
-void _transferCallback(FtpTransferOperation ftpOperation, const char* name, unsigned int transferredSize){
+void _transferCallback(FtpTransferOperation ftpOperation, const char* name, uint32_t transferredSize){
 	Serial.print(">>>>>>>>>>>>>>> _transferCallback " );
 	Serial.print(ftpOperation);
 	/* FTP_UPLOAD_START = 0,
@@ -364,4 +364,3 @@ unsigned int brightness(unsigned int colour, int brightness) {
 
     return (red << 11) + (green << 5) + blue;
 }
-
