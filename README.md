@@ -1,4 +1,4 @@
-# MultiFTPServer Library v2.2.0
+# MultiFTPServer Library v3.0.0
 
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
@@ -104,7 +104,7 @@ Complete tutorials and platform-specific guides by the author are available on m
 ### PlatformIO
 Add to `platformio.ini`:
 ```ini
-lib_deps = xreef/MultiFTPServer@^2.2.0
+lib_deps = xreef/MultiFTPServer@^3.0.0
 ```
 
 ## 🚀 Basic Usage
@@ -156,7 +156,7 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
-- 2025-10-13 2.2.0 
+- 2025-10-13 3.0.0 
   - Improve file-open handling (ensure reads start at file beginning), increase passive data connection wait time, add robust FFat dir create/remove (fallback to /ffat and POSIX), add configurable minimum free-space check before uploads
   - Refactor FTP callback functions to use uint32_t for space parameters, improve serial output, and register callbacks for FTP events
 - 2025-10-16 Fix: Do not force FILE_WRITE mapping for read operations on some SD implementations — prevents files opened for download (RETR) from being positioned at EOF (fix #84)
