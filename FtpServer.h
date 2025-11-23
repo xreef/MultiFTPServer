@@ -19,7 +19,7 @@
 
 #include <FtpServerKey.h>
 
-#define FTP_SERVER_VERSION "3.0.0 (2025-10-13)"
+#define FTP_SERVER_VERSION "3.0.1 (2025-11-22)"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -717,8 +717,10 @@ private:
   bool openFile( char path[ FTP_CWD_SIZE ], const char * readType );
   bool openFile( const char * path, const char * readType );
   // Non-invasive overloads to accept numeric file modes (e.g. FILE_READ) without warnings
+  #if !defined(ESP32)
   bool openFile( char path[ FTP_CWD_SIZE ], uint8_t readType );
   bool openFile( const char * path, uint8_t readType );
+  #endif
 //  bool openFile( char path[ FTP_CWD_SIZE ], int readTypeInt );
 #endif
 //  bool openFile( char path[ FTP_CWD_SIZE ], const char * readType );
