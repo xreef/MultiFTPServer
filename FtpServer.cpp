@@ -1884,11 +1884,16 @@ bool FtpServer::doList()
 	  long fz = long( dir.fileSize());
 	  if (fn[0]=='/') { fn.remove(0, fn.lastIndexOf("/")+1); }
 	  time_t time = dir.fileTime();
-	  generateFileLine(&data, false, fn.c_str(), fz, time, FtpServer::user);
+	  if (transferStage == FTP_Nlst) {
+		data.println(fn.c_str());
+	  } else {
+		generateFileLine(&data, false, fn.c_str(), fz, time, FtpServer::user);
+	  }
 #else
-	  long fz = long( fileDir.size());
-	  const char* fnC = fileDir.name();
-	  const char* fn;
+	  	long fz = long( fileDir.size());
+	  	const char* fnC = fileDir.name();
+	  	const char* fn;
+
 	  if ( fnC[0] == '/' ) {
 		  fn = &fnC[1];
 	  }else{
@@ -1896,7 +1901,11 @@ bool FtpServer::doList()
 	  }
 
 	  time_t time = fileDir.getLastWrite();
-	  generateFileLine(&data, false, fn, fz, time, FtpServer::user);
+	  	if (transferStage == FTP_Nlst) {
+	  		data.println(fn);
+	  	} else {
+	  		generateFileLine(&data, false, fn, fz, time, FtpServer::user);
+	  	}
 
 #endif
 
@@ -1947,18 +1956,22 @@ bool FtpServer::doList()
 //		DEBUG_PRINT( F("\t") );
 //		DEBUG_PRINTLN( fileDir.name() );
 	#endif
-	#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
-		time_t time = dir.fileTime();
-		generateFileLine(&data, dir.isDirectory(), fn, fz, time, FtpServer::user);
-	#elif ESP32
-		time_t time = fileDir.getLastWrite();
-		generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, FtpServer::user);
-	#else
-		generateFileLine(&data, fileDir.isDirectory(), fn, fz, "Jan 01 00:00", FtpServer::user);
-	#endif
+	  	if (transferStage == FTP_Nlst) {
+	  		data.println(fn);
+	  	} else {
+#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
+	  		time_t time = dir.fileTime();
+	  		generateFileLine(&data, dir.isDirectory(), fn, fz, time, FtpServer::user);
+#elif ESP32
+	  		time_t time = fileDir.getLastWrite();
+			generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, FtpServer::user);
+#else
+	  		generateFileLine(&data, fileDir.isDirectory(), fn, fz, "Jan 01 00:00", FtpServer::user);
+#endif
+	  	}
     nbMatch ++;
     return true;
-  }
+		}
 #elif STORAGE_TYPE == STORAGE_SD || STORAGE_TYPE == STORAGE_SD_MMC
 	  FTP_FILE fileDir = dir.openNextFile();
 	  if( fileDir )
@@ -1971,14 +1984,16 @@ bool FtpServer::doList()
 
 		String fn = fileDir.name();
 		if (fn[0]=='/') { fn.remove(0, fn.lastIndexOf("/")+1); }
-
+	  	if (transferStage == FTP_Nlst) {
+	  		data.println(fn.c_str());
+	  	} else {
 #if STORAGE_TYPE == STORAGE_SD_MMC
-		time_t time = fileDir.getLastWrite();
-		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), time, FtpServer::user);
+	  		time_t time = fileDir.getLastWrite();
+	  		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), time, FtpServer::user);
 #else
-		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), "Jan 01 00:00", FtpServer::user);
+	  		generateFileLine(&data, fileDir.isDirectory(), fn.c_str(), long( fileDir.size()), "Jan 01 00:00", FtpServer::user);
 #endif
-
+	  	}
 		nbMatch ++;
 		return true;
   }
@@ -1995,12 +2010,14 @@ bool FtpServer::doList()
 
 		String fn = dir.fileName();
 		if (fn[0]=='/') { fn.remove(0, fn.lastIndexOf("/")+1); }
-
-	generateFileLine(&data, dir.isDir(), fn.c_str(), long( dir.fileSize()), "Jan 01 00:00", FtpServer::user);
-
+  	if (transferStage == FTP_Nlst) {
+  		data.println(fn.c_str());
+  	} else {
+  		generateFileLine(&data, dir.isDir(), fn.c_str(), long( dir.fileSize()), "Jan 01 00:00", FtpServer::user);
+  	}
     nbMatch ++;
     return true;
-  }
+		}
 #else
   if( file.openNext( &dir, FTP_FILE_READ_ONLY ))
   {
@@ -2026,8 +2043,7 @@ bool FtpServer::doList()
 #endif
   DEBUG_PRINTLN(F("All file read!!"));
   return false;
-}
-
+	}
 // Duplicate implementation removed here to avoid redefinition - the active doMlsd() implementation is the one earlier in this file.
 
 bool FtpServer::doMlsd()
@@ -2175,7 +2191,7 @@ bool FtpServer::doMlsd()
 
 		nbMatch ++;
 		return true;
-  }
+		}
 
 #elif STORAGE_TYPE == STORAGE_FATFS
   if( dir.nextFile())
@@ -2190,8 +2206,11 @@ bool FtpServer::doMlsd()
 		String fn = dir.fileName();
 		if (fn[0]=='/') { fn.remove(0, fn.lastIndexOf("/")+1); }
 
-	generateFileLine(&data, dir.isDir(), fn.c_str(), long( dir.fileSize()), "Jan 01 00:00", FtpServer::user);
-
+  	if (transferStage == FTP_Nlst) {
+  		data.println(fn.c_str());
+  	} else {
+		generateFileLine(&data, dir.isDir(), fn.c_str(), long( dir.fileSize()), "Jan 01 00:00", FtpServer::user);
+  	}
     nbMatch ++;
     return true;
   }
@@ -2211,7 +2230,7 @@ bool FtpServer::doMlsd()
     file.close();
     nbMatch ++;
     return true;
-  }
+		}
 #endif
   data.stop();
   client.println(F("226-options: -a -l") );
@@ -2221,7 +2240,7 @@ bool FtpServer::doMlsd()
 #endif
   DEBUG_PRINTLN(F("All file read!!"));
   return false;
-}
+		}
 
 void FtpServer::closeTransfer()
 {
@@ -2241,7 +2260,7 @@ void FtpServer::closeTransfer()
 
     if (FtpServer::_transferCallback) {
       FtpServer::_transferCallback(FTP_TRANSFER_STOP, fname.c_str(), bytesTransfered);
-    }
+	}
 
     client.println(F("226-File successfully transferred") );
     client.print( F("226 ") ); client.print( deltaT ); client.print( F(" ms, ") );
