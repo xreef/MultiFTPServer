@@ -1610,7 +1610,7 @@ bool FtpServer::openDir( FTP_DIR * pdir )
 #elif STORAGE_TYPE == STORAGE_SPIFFS
   if( cwdName == nullptr || strcmp(cwdName, "/") == 0 ) {
 	  DEBUG_PRINTLN(F("DIRECTORY / EXIST "));
-#if ESP8266
+#if defined(ESP8266)
 	  dir = STORAGE_MANAGER.openDir( "/" );
 #else
 	  dir = STORAGE_MANAGER.open( "/" );
@@ -1858,7 +1858,7 @@ bool FtpServer::doList()
     return false;
   }
 #if STORAGE_TYPE == STORAGE_SPIFFS
-	#if ESP8266
+	#if defined(ESP8266)
 	  if( dir.next())
 	#else
 	  FTP_FILE fileDir = dir.openNextFile();
@@ -1962,7 +1962,7 @@ bool FtpServer::doList()
 #if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
 	  		time_t time = dir.fileTime();
 	  		generateFileLine(&data, dir.isDirectory(), fn, fz, time, FtpServer::user);
-#elif ESP32
+#elif defined(ESP32)
 	  		time_t time = fileDir.getLastWrite();
 			generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, FtpServer::user);
 #else
@@ -2060,7 +2060,7 @@ bool FtpServer::doMlsd()
 
 #if STORAGE_TYPE == STORAGE_SPIFFS
 	  DEBUG_PRINTLN(F("DIR MLSD "));
-	#if ESP8266
+	#if defined(ESP8266)
 	  if( dir.next())
 	#else
 	  File fileDir = dir.openNextFile();
@@ -2072,7 +2072,7 @@ bool FtpServer::doMlsd()
 
 		struct tm * timeinfo;
 
-		#if ESP8266
+		#if defined(ESP8266)
 			time_t time = dir.fileTime();
 		#else
 			time_t time = fileDir.getLastWrite();
@@ -2085,7 +2085,7 @@ bool FtpServer::doMlsd()
 			strftime (dtStr,15,"%Y%m%d%H%M%S",timeinfo);
 
 
-	#if ESP8266
+	#if defined(ESP8266)
 		String fn = dir.fileName();
 		fn.remove(0, fn.lastIndexOf("/")+1);
 		long fz = dir.fileSize();
@@ -2160,7 +2160,7 @@ bool FtpServer::doMlsd()
 	#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
 		time_t time = dir.fileTime();
 		generateFileLine(&data, dir.isDirectory(), fn, fz, time, FtpServer::user);
-	#elif ESP32
+	#elif defined(ESP32)
 		time_t time = fileDir.getLastWrite();
 		generateFileLine(&data, fileDir.isDirectory(), fn, fz, time, FtpServer::user);
 	#else

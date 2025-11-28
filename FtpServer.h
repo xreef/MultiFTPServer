@@ -19,7 +19,7 @@
 
 #include <FtpServerKey.h>
 
-#define FTP_SERVER_VERSION "3.0.1 (2025-11-22)"
+#define FTP_SERVER_VERSION "3.0.2 (2025-11-28)"
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -271,7 +271,7 @@
 
 		#endif
 
-#if ESP8266
+#if defined(ESP8266)
 	#define FTP_FILE_READ "r"
 	#define FTP_FILE_READ_ONLY "r"
 	#define FTP_FILE_READ_WRITE "w+"
@@ -305,7 +305,7 @@
 
 	#define FILENAME_LENGTH 255
 #elif(STORAGE_TYPE == STORAGE_LITTLEFS)
-	#if ESP8266 || ARDUINO_ARCH_RP2040
+	#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
 		#include "LittleFS.h"
 		#define STORAGE_MANAGER LittleFS
 		#define FTP_FILE File
@@ -728,7 +728,7 @@ private:
   uint32_t fileSize( FTP_FILE & file );
 
 #if STORAGE_TYPE == STORAGE_SPIFFS || STORAGE_TYPE == STORAGE_LITTLEFS
-#if ESP8266 || ARDUINO_ARCH_RP2040
+#if defined(ESP8266) || defined(ARDUINO_ARCH_RP2040)
   uint32_t capacity() {
       FSInfo fi;
       STORAGE_MANAGER.info(fi);

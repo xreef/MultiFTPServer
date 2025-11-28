@@ -156,6 +156,7 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
+- 2025-11-28 3.0.2 Fix defined in if and elif
 - 2025-11-22 3.0.1 Fix / Example:
   - Add example `ESP32_SD_WiFi` demonstrating SD (SPI) + WiFi usage with MultiFTPServer.
   - Update ESP32 example to initialize SD via SPI (SPI.begin() + SD.begin(CS)) and start the FTP server using the SD storage.
