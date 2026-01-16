@@ -1,4 +1,4 @@
-# MultiFTPServer Library v3.0.0
+# MultiFTPServer Library v3.0.2
 
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
