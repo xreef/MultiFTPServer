@@ -50,6 +50,17 @@
 #include <ctype.h>
 #include <new>
 
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+template <typename S>
+static auto wifiNinaAccept(S &srv, int) -> decltype(srv.accept()) {
+	return srv.accept();
+}
+template <typename S>
+static FTP_CLIENT_NETWORK_CLASS wifiNinaAccept(S &srv, long) {
+	return srv.available();
+}
+#endif
+
 // Static member definitions required by the linker
 IPAddress FtpServer::localIp = IPAddress(0,0,0,0);
 FTP_SERVER_NETWORK_SERVER_CLASS* FtpServer::ftpServer = nullptr;
@@ -294,6 +305,14 @@ void FtpServer::begin( const char * _user, const char * _pass, const char * _wel
         DEBUG_PRINTLN(F("ESP32 Ethernet"));
     #elif FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA
         DEBUG_PRINTLN(F("WiFiNINA"));
+        {
+            String fv = WiFi.firmwareVersion();
+            DEBUG_PRINT(F("WiFiNINA Firmware: "));
+            DEBUG_PRINTLN(fv);
+            if (fv < "1.5.0") {
+                DEBUG_PRINTER.println(F("WARNING: WiFiNINA firmware < 1.5.0 detected! Please upgrade NINA firmware (>= 1.5.0) for WiFiServer::accept() FTP support."));
+            }
+        }
     #elif FTP_SERVER_NETWORK_TYPE == NETWORK_SEEED_RTL8720DN
         DEBUG_PRINTLN(F("Seeed RTL8720DN"));
     #else
@@ -331,7 +350,13 @@ void FtpServer::begin( const char * _user, const char * _pass, const char * _wel
 		FtpServer::anonymousConnection = false; // needed to reset after end of anonymnous and begin of not anonymous
 	}
   // Tells the ftp server to begin listening for incoming connection
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+  if (FtpServer::ftpServer && FtpServer::ftpServer->status() == CLOSED) {
+    FtpServer::ftpServer->begin();
+  }
+#else
   FtpServer::ftpServer->begin();
+#endif
   #if (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242)) || defined(ARDUINO_ARCH_RP2040) || FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_SEEED_RTL8720DN
   FtpServer::ftpServer->setNoDelay( true );
   #endif
@@ -350,7 +375,13 @@ void FtpServer::begin( const char * _user, const char * _pass, const char * _wel
 //  strcpy(FtpServer::_welcomeMessage, welcomeMessage);
   FtpServer::welcomeMessage = _welcomeMessage;
 
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+  if (FtpServer::dataServer && FtpServer::dataServer->status() == CLOSED) {
+    FtpServer::dataServer->begin();
+  }
+#else
   FtpServer::dataServer->begin();
+#endif
 #if (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242)) || defined(ARDUINO_ARCH_RP2040) || FTP_SERVER_NETWORK_TYPE_SELECTED == NETWORK_SEEED_RTL8720DN
   FtpServer::dataServer->setNoDelay( true );
 #endif
@@ -488,12 +519,11 @@ void FtpServer::_handleFTP() {
 			cmdStage = FTP_Client;
 		} else if (cmdStage == FTP_Client) {    // Ftp server idle
 #if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
-//			if (client && !client.connected()) {
-//				client.stop();
-//              DEBUG_IDX; DEBUG_PRINTLN(F("CLIENT STOP!!"));
-//			}
-			byte status;
-			client = FtpServer::ftpServer->available(&status);
+			if (client && !client.connected()) {
+				client.stop();
+				DEBUG_IDX; DEBUG_PRINTLN(F("CLIENT STOP!!"));
+			}
+			client = wifiNinaAccept(*FtpServer::ftpServer, 0);
 			/*
 			 *   CLOSED      = 0,
   LISTEN      = 1,
@@ -847,7 +877,13 @@ bool FtpServer::processCommand()
   else if( CommandIs( "PASV" ))
   {
     data.stop();
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+    if (FtpServer::dataServer && FtpServer::dataServer->status() == CLOSED) {
+      FtpServer::dataServer->begin();
+    }
+#else
     FtpServer::dataServer->begin();
+#endif
     if (((((uint32_t) NET_CLASS.localIP()) & ((uint32_t) NET_CLASS.subnetMask())) ==
        (((uint32_t) client.remoteIP()) & ((uint32_t) NET_CLASS.subnetMask()))) && (uint32_t)FtpServer::localIp <= 0) {
       dataIp = NET_CLASS.localIP();
@@ -1506,7 +1542,7 @@ int FtpServer::dataConnect( bool out150 )
 			while( ! data.connected() && waited < count )
 			{
 #if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
-				data = FtpServer::dataServer->available();
+				data = wifiNinaAccept(*FtpServer::dataServer, 0);
 #elif (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242)) // || defined(ARDUINO_ARCH_RP2040)
 				if( FtpServer::dataServer->hasClient())
 				{
