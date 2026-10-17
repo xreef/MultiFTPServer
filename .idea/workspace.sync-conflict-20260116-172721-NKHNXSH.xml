@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2e3bbd70-1050-4c71-ac9e-336b67c80fab" name="Changes" comment="Update version to 3.0.2 and fix conditional compilation for ESP8266 and ESP32" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="features/addictionalFixAndBetterCode" />
+      </map>
+    </option>
+    <option name="RECENT_COMMON_BRANCH" value="master" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="SYNC" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;xreef&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/xreef/MultiFTPServer.git&quot;,
+    &quot;accountId&quot;: &quot;f37e7f24-8d53-47a0-a28c-02635f250f01&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/FtpServer.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FtpServer.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FtpServerKey.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MultiFTPServer.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/SimpleFTPServer.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/examples/Arduino_Ethernet_SdFat2/Arduino_Ethernet_SdFat2.ino" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/examples/ESP32_AP_FFAT_WiFi/ESP32_AP_FFAT_WiFi.ino" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/examples/ESP32_FFAT_WiFi/ESP32_FFAT_WiFi.ino" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/examples/esp8266_esp32_LittleFS/esp8266_esp32_LittleFS.ino" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2rXKGeM1JCFIEqrmwRI9xU6kYPd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Projects/Arduino/sloeber-workspace-lib/MultiFTPServer&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;D:/Projects/Arduino/sloeber-workspace-lib/SimpleFTPServer/FtpServer.cpp&quot;,
+    &quot;two.files.diff.last.used.folder&quot;: &quot;D:/Projects/Arduino/sloeber-workspace-lib/SimpleFTPServer&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Projects\Arduino\sloeber-workspace-lib\MultiFTPServer" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2e3bbd70-1050-4c71-ac9e-336b67c80fab" name="Changes" comment="" />
+      <created>1736699884949</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1736699884949</updated>
+      <workItem from="1736699886034" duration="1436000" />
+      <workItem from="1738051297987" duration="1452000" />
+      <workItem from="1738678267986" duration="20000" />
+      <workItem from="1739010179603" duration="150000" />
+      <workItem from="1739265612997" duration="1173000" />
+      <workItem from="1740343937733" duration="1966000" />
+      <workItem from="1740387312281" duration="6443000" />
+      <workItem from="1740586228275" duration="628000" />
+      <workItem from="1742111448554" duration="620000" />
+      <workItem from="1742659906584" duration="1314000" />
+      <workItem from="1743172781122" duration="189000" />
+      <workItem from="1745045430950" duration="1004000" />
+      <workItem from="1750412506673" duration="204000" />
+      <workItem from="1760090343651" duration="3557000" />
+      <workItem from="1760337491316" duration="593000" />
+      <workItem from="1760344825376" duration="22570000" />
+      <workItem from="1760519337952" duration="5077000" />
+      <workItem from="1760533426474" duration="19825000" />
+      <workItem from="1761027539658" duration="7265000" />
+      <workItem from="1761202860127" duration="11713000" />
+      <workItem from="1761467153757" duration="4524000" />
+      <workItem from="1761553467752" duration="2957000" />
+      <workItem from="1761574061568" duration="11000" />
+      <workItem from="1761811877032" duration="772000" />
+      <workItem from="1761928960042" duration="1000" />
+      <workItem from="1761981298005" duration="33000" />
+      <workItem from="1763890083055" duration="156000" />
+      <workItem from="1763992898367" duration="1134000" />
+      <workItem from="1764316774075" duration="372000" />
+    </task>
+    <task id="LOCAL-00001" summary="Add REST, ALLO, and STAT commands and addictional log">
+      <option name="closed" value="true" />
+      <created>1738135603569</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1738135603569</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Issue with long file names due to lossy type conversion in FtpServer::readChar() SimpliFTPServer#75">
+      <option name="closed" value="true" />
+      <created>1739010269163</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1739010269163</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Management of relative and absolute path in command prompt (./ ../ /)&#10;Fix REST and add ALLO, and STAT commands&#10;Add addictional LOG to prevent multiple user issues&#10;Add REST (resume) command">
+      <option name="closed" value="true" />
+      <created>1740344033067</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1740344033067</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Management of relative and absolute path in command prompt (./ ../ /)&#10;Fix REST and add ALLO, and STAT commands&#10;Add addictional LOG to prevent multiple user issues&#10;Add REST (resume) command">
+      <option name="closed" value="true" />
+      <created>1742111464173</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1742111464173</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Fix long name https://github.com/xreef/SimpleFTPServer/issues/75">
+      <option name="closed" value="true" />
+      <created>1742660041405</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1742660041405</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Minor fix to release">
+      <option name="closed" value="true" />
+      <created>1745045542651</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1745045542651</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Update to 2.2.0 (library.properties version update) multiple fix and update #2">
+      <option name="closed" value="true" />
+      <created>1760369287469</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1760369287469</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Modify buff size manage ; on debug correct initialization">
+      <option name="closed" value="true" />
+      <created>1760511473273</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1760511473273</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Modify buff size manage ; on debug correct initialization">
+      <option name="closed" value="true" />
+      <created>1760512098051</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1760512098051</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Modify buff size manage ; on debug correct initialization &#10;#1 #2">
+      <option name="closed" value="true" />
+      <created>1760513608527</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1760513608527</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Minor fix">
+      <option name="closed" value="true" />
+      <created>1760514508048</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1760514508048</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Fix file WRITE READ APPEND xreef/SimpleFTPServer#84">
+      <option name="closed" value="true" />
+      <created>1760597478821</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1760597478821</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Improve file open handling, passive data connection wait, and FFat directory support&#10;&#10;- Ensure file pointer is set to start when opening files for read across all storage types&#10;- Increase passive data connection wait time for better reliability on slow networks&#10;- Add robust FFat directory creation/removal with fallback to /ffat prefix and POSIX calls&#10;- Add configurable minimum free space check before accepting uploads&#10;- Make FTP debug output optional and disabled by default">
+      <option name="closed" value="true" />
+      <created>1760951880218</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1760951880218</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Enhance FTP free space reporting and improve storage capacity calculations">
+      <option name="closed" value="true" />
+      <created>1761052078141</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1761052078141</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Refactor FTP callback functions to use uint32_t for space parameters, improve serial output, and register callbacks for FTP events">
+      <option name="closed" value="true" />
+      <created>1761232986552</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1761232986552</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Bump version to 3.0.0 in FtpServer.h, library.json, library.properties, and README.md">
+      <option name="closed" value="true" />
+      <created>1761413404708</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1761413404708</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Bump version to 3.0.0 in FtpServer.h, library.json, library.properties, and README.md">
+      <option name="closed" value="true" />
+      <created>1761413775443</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1761413775443</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Update README.md changelog for version 3.0.0 with fixes and enhancements">
+      <option name="closed" value="true" />
+      <created>1761812182695</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1761812182695</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Add ESP32_SD_WiFi example demonstrating SD (SPI) and WiFi usage with MultiFTPServer fix SD support">
+      <option name="closed" value="true" />
+      <created>1763890162673</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1763890162673</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Add ESP32_SD_SdFat2 example demonstrating SdFat library integration with WiFi">
+      <option name="closed" value="true" />
+      <created>1763993309013</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1763993309013</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Update version to 3.0.2 and fix conditional compilation for ESP8266 and ESP32">
+      <option name="closed" value="true" />
+      <created>1764317142254</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1764317142254</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Add REST, ALLO, and STAT commands and addictional log" />
+    <MESSAGE value="Issue with long file names due to lossy type conversion in FtpServer::readChar() SimpliFTPServer#75" />
+    <MESSAGE value="Management of relative and absolute path in command prompt (./ ../ /)&#10;Fix REST and add ALLO, and STAT commands&#10;Add addictional LOG to prevent multiple user issues&#10;Add REST (resume) command" />
+    <MESSAGE value="Fix long name https://github.com/xreef/SimpleFTPServer/issues/75" />
+    <MESSAGE value="Minor fix to release" />
+    <MESSAGE value="Update to 2.2.0 (library.properties version update) multiple fix and update #2" />
+    <MESSAGE value="Modify buff size manage ; on debug correct initialization" />
+    <MESSAGE value="Modify buff size manage ; on debug correct initialization &#10;#1 #2" />
+    <MESSAGE value="Minor fix" />
+    <MESSAGE value="Fix file WRITE READ APPEND xreef/SimpleFTPServer#84" />
+    <MESSAGE value="Improve file open handling, passive data connection wait, and FFat directory support&#10;&#10;- Ensure file pointer is set to start when opening files for read across all storage types&#10;- Increase passive data connection wait time for better reliability on slow networks&#10;- Add robust FFat directory creation/removal with fallback to /ffat prefix and POSIX calls&#10;- Add configurable minimum free space check before accepting uploads&#10;- Make FTP debug output optional and disabled by default" />
+    <MESSAGE value="Improve free-space reporting: use callback values in examples, update README notes, and fix capacity/free methods to return bytes" />
+    <MESSAGE value="Refactor FTP callback functions to use uint32_t for space parameters, improve serial output, and register callbacks for FTP events" />
+    <MESSAGE value="Bump version to 3.0.0 in FtpServer.h, library.json, library.properties, and README.md" />
+    <MESSAGE value="Update README.md changelog for version 3.0.0 with fixes and enhancements" />
+    <MESSAGE value="Add ESP32_SD_WiFi example demonstrating SD (SPI) and WiFi usage with MultiFTPServer fix SD support" />
+    <MESSAGE value="Add ESP32_SD_SdFat2 example demonstrating SdFat library integration with WiFi" />
+    <MESSAGE value="Update version to 3.0.2 and fix conditional compilation for ESP8266 and ESP32" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update version to 3.0.2 and fix conditional compilation for ESP8266 and ESP32" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>

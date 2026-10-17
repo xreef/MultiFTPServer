@@ -1,4 +1,4 @@
-# MultiFTPServer Library v3.0.2
+# MultiFTPServer Library v3.0.3
 
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
@@ -156,7 +156,19 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
-- 2025-11-28 3.0.2 Fix defined in if and elif
+- 2026-10-17 3.0.3
+  - Add RFC 2428 `EPSV` (Extended Passive Mode) command and `FEAT` announcement with `WiFiNINA` socket reuse guard (SimpleFTPServer#99)
+  - Fix partial TCP write rewind in `doRetrieve()` when `data.write()` writes fewer bytes than read from storage under TCP backpressure (SimpleFTPServer#100)
+  - Fix `FTP_TRANSFER_STOP` callback receiving an empty filename in `closeTransfer()` and prevent `readChar()` null-terminator overflow into `cwdName` (SimpleFTPServer#98)
+  - Fix `readChar()` replacing single quotes (`'`) with `/` in filenames instead of Windows backslashes (`\`) (SimpleFTPServer#96)
+  - Fix `WiFiClient::flush()` deprecation warnings on ESP32 Arduino Core 3.3.7+ by removing redundant calls after `stop()` and guarding with `#if defined(ESP8266)` (SimpleFTPServer#94)
+  - Fix `isDir()` leaking `this->file` handle and misidentifying regular files as directories on `STORAGE_SD`, `STORAGE_LITTLEFS`, `STORAGE_FFAT`, and `STORAGE_SD_MMC`; send `250 Deleted` before `FTP_FREE_SPACE_CHANGE` callback in `DELE` (SimpleFTPServer#92)
+  - Fix `APPE` (append) mode on ESP32 `STORAGE_SD` and `STORAGE_SD_MMC` in `openFile()` (`"a"` was overwritten with `"w"`) (SimpleFTPServer#90)
+  - Fix `getFileModTime()` (`MLST`), `NLST` on `SdFat`, and restore RFC 3659 `MLSD` output format across all storage backends
+  - Fix `WiFiNINA` (`NETWORK_WiFiNINA`) server socket exhaustion and `accept()`/`available()` handling on SAMD21 (Arduino Nano 33 IoT); add missing `client.stop()` in `disconnectClient()`
+  - Avoid blocking `free()` FAT cluster scans on `FTP_CONNECT`/`FTP_DISCONNECT` and on `SdFat` when `MAINTAIN_FREE_CLUSTER_COUNT` is disabled (SimpleFTPServer#93)
+  - Decouple `#ifndef DEFAULT_STORAGE_TYPE_*` and `#ifndef DEFAULT_FTP_SERVER_NETWORK_TYPE_*` guards in `FtpServerKey.h` and update all library examples (SimpleFTPServer#90, SimpleFTPServer#91)
+- 2025-11-28 3.0.2 Fix defined in if and elif (SimpleFTPServer#88)
 - 2025-11-22 3.0.1 Fix / Example:
   - Add example `ESP32_SD_WiFi` demonstrating SD (SPI) + WiFi usage with MultiFTPServer.
   - Update ESP32 example to initialize SD via SPI (SPI.begin() + SD.begin(CS)) and start the FTP server using the SD storage.

@@ -144,16 +144,6 @@ void setup()
   ftpSrv.setCallback(_callback);
   ftpSrv.setTransferCallback(_transferCallback);
 
-  // Verifica che le callback siano state registrate (helper aggiunti alla libreria)
-  Serial.print(F("hasCallback: "));
-  Serial.println( ftpSrv.hasCallback() ? F("yes") : F("no") );
-  Serial.print(F("hasTransferCallback: "));
-  Serial.println( ftpSrv.hasTransferCallback() ? F("yes") : F("no") );
-
-  // Diagnostic: force-invoke callbacks to verify registration and runtime invocation
-  // (calls will print messages to Serial). Remove or keep for testing.
-  ftpSrv.testInvokeCallbacks();
-
   // Initialize the FTP server
   ftpSrv.begin("user","password");
   // ftpSrv.init( externalIp );

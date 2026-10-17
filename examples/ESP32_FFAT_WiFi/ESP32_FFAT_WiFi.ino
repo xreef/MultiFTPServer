@@ -8,6 +8,7 @@
  */
 
 #include "Arduino.h"
+#include <WiFi.h>
 #include "FS.h"
 #include "FFat.h"
 
@@ -28,7 +29,7 @@ void _callback(FtpOperation ftpOperation, uint32_t freeSpace, uint32_t totalSpac
       Serial.println(F("FTP: Disconnected!"));
       break;
     case FTP_FREE_SPACE_CHANGE:
-      Serial.printf("FTP: Free space change, free %u of %u!\n", freeSpace, totalSpace);
+      Serial.printf("FTP: Free space change, free %lu of %lu!\n", (unsigned long)freeSpace, (unsigned long)totalSpace);
       break;
     default:
       break;
@@ -40,7 +41,7 @@ void _transferCallback(FtpTransferOperation ftpOperation, const char* name, uint
       Serial.println(F("FTP: Upload start!"));
       break;
     case FTP_UPLOAD:
-      Serial.printf("FTP: Upload of file %s byte %u\n", name, transferredSize);
+      Serial.printf("FTP: Upload of file %s byte %lu\n", name, (unsigned long)transferredSize);
       break;
     case FTP_TRANSFER_STOP:
       Serial.println(F("FTP: Finish transfer!"));
@@ -70,7 +71,14 @@ void _transferCallback(FtpTransferOperation ftpOperation, const char* name, uint
 
 void setup(void){
   Serial.begin(115200);
+  unsigned long start = millis();
+  while (!Serial && (millis() - start < 3000)) {
+    delay(10);
+  }
+
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  WiFi.setTxPower(WIFI_POWER_11dBm);
   Serial.println("");
 
   // Wait for connection

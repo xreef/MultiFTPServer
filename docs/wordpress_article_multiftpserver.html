@@ -1,0 +1,514 @@
+<!-- wp:shortcoder/shortcoder -->
+[sc name="buttonsupportforum" buttonurl="https://mischianti.org/forums/forum/mischiantis-libraries/simple-ftp-server/" buttonlabel="Support forum for MultiFTPServer" ][/sc]
+<!-- /wp:shortcoder/shortcoder -->
+
+<!-- wp:paragraph -->
+<p>In the landscape of embedded systems and the Internet of Things (IoT), the ability to manage files remotely and efficiently has become a fundamental necessity. While the File Transfer Protocol (FTP) might be seen as a mature technology, its simplicity, robustness, and broad client support make it an ideal solution for a wide range of microcontroller applications. As <a href="https://www.mischianti.org/category/esp32/" target="_blank" rel="noopener">we've explored in many articles on mischianti.org</a>, implementing an FTP server on a device like an <strong>ESP32</strong> transforms it from a simple code executor into an interactive, remotely manageable data platform.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":33604,"sizeSlug":"large","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-large"><img src="https://mischianti.org/wp-content/uploads/2025/10/ESP32-with-FTP-server-log-web-ota-1024x904.jpg" alt="ESP32 as FTP server for Log, Web hosting &amp; OTA" class="wp-image-33604"/><figcaption class="wp-element-caption">ESP32 as FTP server for Log, Web hosting &amp; OTA</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:paragraph -->
+<p>The practical use cases are numerous. Consider a remote <strong>data logging</strong> system where sensor data is continuously saved to an SD card. An FTP server allows access to these logs for offline analysis without interrupting the device's operation. Another common scenario is managing <strong>configuration files</strong>: operational parameters or network settings can be dynamically updated by simply uploading a text or JSON file.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>A particularly powerful application is <strong>hosting web interfaces</strong>. An entire front-end application (developed with frameworks like Angular or React) can be hosted on the microcontroller's internal filesystem (SPIFFS or LittleFS) and updated in seconds via FTP. Finally, FTP is an excellent mechanism for firmware and filesystem updates (<strong>Over-the-Air, OTA</strong>), allowing new binary files (<code>.bin</code>) to be uploaded reliably.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>To meet these needs, the Arduino community has the <strong>MultiFTPServer</strong> library by xreef, a modern solution designed for performance, concurrency, and flexibility, overcoming the limitations of traditional libraries.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Better Performance Through Concurrency: From SimpleFTPServer to MultiFTPServer </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>To fully appreciate the value of the MultiFTPServer library, it's essential to analyze its evolution from <a href="https://www.mischianti.org/2019/11/22/simpleftpserver-on-esp8266-and-esp32-a-tutorial/" target="_blank" rel="noopener">its predecessor, SimpleFTPServer</a>. Although a valid and lightweight library, <code>SimpleFTPServer</code> is built on an architecture inherently limited to <strong>a single FTP session at a time</strong>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>This limitation becomes a critical bottleneck in many real-world scenarios. Modern FTP clients, like FileZilla or WinSCP, are optimized for performance and attempt to open multiple connections to parallelize operations. When such a client connects to a <code>SimpleFTPServer</code>-based device, only the first connection is accepted. Subsequent requests are rejected or queued, forcing the client to operate sequentially. The result is a drastic slowdown and an increased risk of timeout errors.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":33606,"sizeSlug":"large","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-large"><img src="https://mischianti.org/wp-content/uploads/2025/10/Arduino-ESP32-FTP-Single-vs-multi-connections-1024x882.jpg" alt="FTP Single vs multi connections" class="wp-image-33606"/><figcaption class="wp-element-caption">FTP Single vs multi connections</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:paragraph -->
+<p><strong>MultiFTPServer</strong> was designed specifically to overcome this. It's a "drop-in successor" that brings <strong>true multi-session FTP</strong> to microcontrollers. The architecture was re-engineered with an <em>event-driven</em> connection manager and smarter memory handling. The server is no longer a blocking loop but a reactive system capable of managing multiple connection states asynchronously.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Comparison Table: SimpleFTPServer vs. MultiFTPServer</h2>
+<!-- /wp:heading -->
+
+<!-- wp:table {"hasFixedLayout":false,"className":"table-mischianti mischianti-table-top is-style-regular mischianti-table-left"} -->
+<figure class="wp-block-table table-mischianti mischianti-table-top is-style-regular mischianti-table-left"><table><thead><tr><td><strong>Feature</strong></td><td><strong>🐢 SimpleFTPServer</strong></td><td><strong>🚀 MultiFTPServer</strong></td></tr></thead><tbody><tr><td><strong>Concurrent Sessions</strong></td><td>1 (Single) ❌</td><td>Configurable (Default: 2) ✔️</td></tr><tr><td><strong>Architecture</strong></td><td>Sequential / Blocking</td><td>Event-driven / Asynchronous</td></tr><tr><td><strong>Performance with Modern Clients</strong></td><td>Limited, bottleneck-prone</td><td>Optimized, leverages parallelism</td></tr><tr><td><strong>Ideal Use Case</strong></td><td>Simple projects, occasional transfers</td><td>Complex apps, web servers, data logging</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Choosing Your Hardware and Filesystem </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>The performance of your FTP server depends heavily on the underlying hardware and the filesystem you choose. Let's compare some popular options.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">ESP32 Microcontroller Comparison</h2>
+<!-- /wp:heading -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":3979,"sizeSlug":"large","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-large"><img src="https://mischianti.org/wp-content/uploads/2020/05/esp32_dev_kit_pinout_v1_mischianti-1024x501.jpg" alt="esp32 dev kit pinout v1" class="wp-image-3979"/><figcaption class="wp-element-caption">esp32 dev kit pinout v1 </figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:paragraph -->
+<p>Not all ESP32s are created equal. The newer variants offer different features that can impact your project.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"className":"table-mischianti mischianti-table-top is-style-regular mischianti-table-left"} -->
+<figure class="wp-block-table table-mischianti mischianti-table-top is-style-regular mischianti-table-left"><table><thead><tr><td><strong>Feature</strong></td><td><strong>ESP32 (Classic)</strong></td><td><strong>ESP32-S3</strong></td><td><strong>ESP32-C3</strong></td></tr></thead><tbody><tr><td><strong>CPU Core</strong></td><td>Dual-Core LX6</td><td>Dual-Core LX7</td><td>Single-Core RISC-V</td></tr><tr><td><strong>Performance</strong></td><td>Good</td><td>Excellent (Faster Core, AI instructions)</td><td>Good (for single-core)</td></tr><tr><td><strong>SRAM</strong></td><td>520 KB</td><td>512 KB (+ PSRAM support)</td><td>400 KB</td></tr><tr><td><strong>Connectivity</strong></td><td>WiFi 4, Bluetooth 4.2</td><td>WiFi 4, Bluetooth 5</td><td>WiFi 4, Bluetooth 5</td></tr><tr><td><strong>Best for FTP Server</strong></td><td>Solid all-rounder for most projects.</td><td>High-performance applications, large file transfers, especially with PSRAM.</td><td>Low-cost, simpler projects where high concurrency is not the main goal.</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Internal Filesystem Comparison (for ESP32)</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>When using the internal flash memory, you have several filesystem choices, each with its own trade-offs.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"hasFixedLayout":false,"className":"table-mischianti mischianti-table-top is-style-regular mischianti-table-left"} -->
+<figure class="wp-block-table table-mischianti mischianti-table-top is-style-regular mischianti-table-left"><table><thead><tr><td><strong>Feature</strong></td><td><strong>SPIFFS</strong></td><td><strong>LittleFS</strong></td><td><strong>FFat (FATFS)</strong></td></tr></thead><tbody><tr><td><strong>Speed</strong></td><td>Slow</td><td><strong>Fast</strong> (Optimized for small files)</td><td>Fast (Good for large files)</td></tr><tr><td><strong>Wear Leveling</strong></td><td>Yes</td><td><strong>Excellent</strong></td><td>Limited</td></tr><tr><td><strong>Directory Support</strong></td><td>No (Simulated)</td><td>Yes (Real directories)</td><td>Yes (Real directories)</td></tr><tr><td><strong>Use Case</strong></td><td>Legacy projects, simple storage.</td><td><strong>Recommended for most new projects</strong>, especially for web servers with many small files.</td><td>Good for storing large, single files like firmware binaries or large logs.</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph -->
+<p>But in most situazion SD card can be the only solution.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p><strong>SD.h vs. LittleFS for SD Cards on ESP32: A Comparison</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:table {"className":"table-mischianti mischianti-table-top is-style-regular mischianti-table-left"} -->
+<figure class="wp-block-table table-mischianti mischianti-table-top is-style-regular mischianti-table-left"><table class="has-fixed-layout"><thead><tr><td><strong>Feature</strong></td><td><strong>SD.h (Standard SD Library on ESP32)</strong></td><td><strong>LittleFS (on SD Card via ESP32 Driver)</strong></td></tr></thead><tbody><tr><td><strong>I/O Approach</strong> 🔁</td><td><strong>Traditional, sequential.</strong> Basic block operations. Slow for many small, random accesses.</td><td><strong>Modern, flash-optimized.</strong> Manages blocks logically with caching and journaling.</td></tr><tr><td><strong>Operation Speed</strong> ⚡</td><td>Good for large sequential reads/writes. Slow for many small writes or random access patterns.</td><td>Highly efficient for small writes/reads and random access. Can be faster even for large files due to optimizations.</td></tr><tr><td><strong>Flash Endurance (Wear-Leveling)</strong> 🔄</td><td><strong>None.</strong> Writes occur at the same physical locations. SD card's life depends solely on its internal controller.</td><td><strong>Yes, built-in.</strong> Distributes writes across different blocks to significantly extend the SD card's lifespan.</td></tr><tr><td><strong>Operation Atomicity</strong> 🔒</td><td><strong>No.</strong> An interruption (e.g., power loss) during writing can corrupt the file or the file system.</td><td><strong>Yes.</strong> Guarantees "atomic writes," ensuring the file system remains in a valid state even after a power interruption.</td></tr><tr><td><strong>Space Management</strong> 📊</td><td>Direct mapping of files onto the FAT file system (physical blocks).</td><td>More abstract space management, with logical blocks mapped to physical blocks (wear-leveling).</td></tr><tr><td><strong>Reliability</strong> 💪</td><td>Medium. Vulnerable to corruption in case of power loss or unmanaged writes.</td><td>High. Designed to be robust and resilient to corruption even in unstable environments.</td></tr><tr><td><strong>Ease of Use</strong> 👨‍💻</td><td>Very simple to use, familiar Arduino <code>File</code> API.</td><td>Initial setup requires more steps (logical partitioning), but file API is straightforward once initialized.</td></tr><tr><td><strong>Overhead (RAM/Flash)</strong> 🧠</td><td>Relatively low.</td><td>Higher overhead (RAM and Flash for code) due to advanced file system management and wear-leveling.</td></tr><tr><td><strong>Ideal Use Cases</strong> ✅</td><td>Simple projects, non-critical configuration read/write, occasional data logging.</td><td>Intensive logging, caching, critical parameter storage, Over-The-Air (OTA) updates, IoT applications.</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Library Installation</h2>
+<!-- /wp:heading -->
+
+<!-- wp:shortcoder/shortcoder -->
+[sc name="github_library_box" library="MultiFTPServer" ][/sc]
+<!-- /wp:shortcoder/shortcoder -->
+
+<!-- wp:paragraph -->
+<p>You'll need three libraries for this project. You can install all of them through the Arduino IDE's Library Manager (<em>Sketch -&gt; Include Library -&gt; Manage Libraries...</em>):</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+  <li><strong>MultiFTPServer</strong>: Search for "MultiFTPServer" and install the library by me, Renzo Mischianti.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>SdFat</strong>: Search for "SdFat" by Bill Greiman and install the latest version. This is a much more powerful and reliable alternative to the standard SD library.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Ethernet</strong>: This library is usually pre-installed with the Arduino IDE, but ensure it's up to date.</li>
+  <!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":32394,"sizeSlug":"large","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-large"><img src="https://mischianti.org/wp-content/uploads/2025/04/ArduinoIDE-MultiFTPServer-FTP-Server-advanced-1-1024x725.jpg" alt="ArduinoIDE MultiFTPServer Library" class="wp-image-32394"/><figcaption class="wp-element-caption">ArduinoIDE MultiFTPServer Library</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Configuration in Detail: The Heart of the Library, FtpServerKey.h </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>The <code>FtpServerKey.h</code> file is the library's control center. It allows you to tailor behavior to your project's needs. Proper modification of this file is crucial for optimizing performance and resource usage. You can find this file inside your Arduino libraries folder (e.g., <code>Documents/Arduino/libraries/MultiFTPServer/FtpServerKey.h</code>).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>The configuration revolves around a "performance trilemma": <strong>concurrency, throughput (speed), and RAM consumption</strong>. Increasing the first two metrics inevitably leads to higher usage of the third. Finding the right balance is essential.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Essential Configuration Directives</h2>
+<!-- /wp:heading -->
+
+<!-- wp:table {"hasFixedLayout":false,"className":"table-mischianti mischianti-table-top is-style-regular mischianti-table-left"} -->
+<figure class="wp-block-table table-mischianti mischianti-table-top is-style-regular mischianti-table-left"><table><thead><tr><td><strong>Directive</strong></td><td><strong>Description</strong></td><td><strong>Default</strong></td><td><strong>Impact</strong></td></tr></thead><tbody><tr><td><code>FTP_MAX_SESSIONS</code></td><td>Maximum number of simultaneously connected clients. This is the core of the multi-session feature.</td><td>2</td><td>Increases concurrency. Each session consumes significant RAM. Set it to 1 to behave like SimpleFTPServer.</td></tr><tr><td><code>FTP_BUF_SIZE</code></td><td>Size in bytes of the buffer for file transfers. It acts as a chunk of data read from or written to the filesystem at once.</td><td>1024</td><td>A larger buffer increases throughput (speed) for large files but consumes more RAM. For many small files, a smaller buffer might be acceptable.</td></tr><tr><td><code>FTP_TIME_OUT</code></td><td>Inactivity timeout in seconds. If a client sends no commands for this duration, the connection is closed to free up a session slot.</td><td>300</td><td>Prevents stalled or "dead" connections from occupying resources. Lower it if you expect clients to connect and disconnect frequently.</td></tr><tr><td><code>FTP_DEBUG</code></td><td>Uncomment this line to enable detailed debug messages on the Serial port.</td><td>Commented</td><td>Extremely useful for troubleshooting connection issues, but adds overhead and increases code size.</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:paragraph -->
+<p><em><strong>Attention:</strong> Modifying these directives requires editing the file in your Arduino libraries folder. You must recompile and re-upload your sketch after each change.</em></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Connecting with an FTP Client (FileZilla)</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>To get the best performance from <strong>MultiFTPServer</strong>, you must configure your FTP client to use multiple connections. This is the opposite of the advice for <code>SimpleFTPServer</code>, where you had to limit connections to 1.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Here’s how to configure <strong>FileZilla</strong> for optimal performance:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+  <li>Open FileZilla and go to <strong>File &gt; Site Manager...</strong>.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li>Click <strong>New site</strong> and give it a name (e.g., "ESP32 FTP Server").</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li>On the <strong>General</strong> tab, enter the following: <!-- wp:list -->
+    <ul class="wp-block-list"><!-- wp:list-item -->
+      <li>Protocol: FTP - File Transfer Protocol</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>Host: The IP address of your ESP32 (from the Serial Monitor).</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>Port: 21</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>Encryption: Use plain FTP (insecure)</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>Logon Type: Normal</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>User: esp32 (or what you set in the code)</li>
+      <!-- /wp:list-item -->
+
+      <!-- wp:list-item -->
+      <li>Password: esp32 (or what you set in the code)</li>
+      <!-- /wp:list-item --></ul>
+    <!-- /wp:list --></li>
+  <!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":2145,"sizeSlug":"large","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-large"><img src="http://mischianti.org/wp-content/uploads/2019/06/filezillaConfigurationEsp8266_01-1024x743.jpg" alt="FileZilla Site Manager General Tab Configuration" class="wp-image-2145"/><figcaption class="wp-element-caption">FileZilla configuration: General settings for the ESP32 FTP server.</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:list {"ordered":true,"start":4} -->
+<ol start="4" class="wp-block-list"><!-- wp:list-item -->
+  <li>Now, go to the <strong>Transfer Settings</strong> tab. This is the most important step.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li>Check the box for <strong>Limit number of simultaneous connections</strong>.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li>Set the <strong>Maximum number of connections</strong> to a value that matches or is less than <code>FTP_MAX_SESSIONS</code> in your configuration (e.g., <strong>2</strong>). This allows FileZilla to perform operations like listing directories and transferring files in parallel.</li>
+  <!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":2146,"sizeSlug":"full","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-full"><img src="https://mischianti.org/wp-content/uploads/2019/06/filezillaConfigurationEsp8266_02-e1559639498400.jpg" alt="" class="wp-image-2146"/><figcaption class="wp-element-caption">Filezilla configuration for access esp8266, select max num connections</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:list {"ordered":true,"start":7} -->
+<ol start="7" class="wp-block-list"><!-- wp:list-item -->
+  <li>Click <strong>Connect</strong>. You should now be able to browse your ESP32's filesystem with much better responsiveness than a single-session server.</li>
+  <!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Your First Multi-Session FTP Server: ESP32 with Internal Filesystem </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>This robust code example creates a basic FTP server on an ESP32 using the internal SPIFFS. </p>
+<!-- /wp:paragraph -->
+
+<!-- wp:syntaxhighlighter/code {"language":"arduino"} -->
+<pre class="wp-block-syntaxhighlighter-code">/******************************************************************************
+ * MultiFTPServer - SPIFFS Example
+ *
+ * A project by Renzo Mischianti
+ * https://www.mischianti.org
+ *
+ * This sketch demonstrates how to set up a high-performance multi-session
+ * FTP server on an ESP32 using the SPIFFS file system.
+ *
+ * Find the full article and guide at:
+ * https://mischianti.org/category/my-libraries/multi-ftp-server/
+ *
+ * Copyright (c) 2024 Renzo Mischianti. All rights reserved.
+ ******************************************************************************/
+
+// Include necessary libraries
+#include &lt;WiFi.h>
+#include &lt;SPIFFS.h>
+#include "MultiFTPServer.h"
+
+// --- Configuration ---
+// Enter your WiFi network credentials here
+const char* ssid = "YOUR_SSID";     // &lt;-- MODIFY THIS!
+const char* password = "YOUR_PASSWORD"; // &lt;-- MODIFY THIS!
+
+// Enter your FTP server access credentials here
+const char* ftp_user = "esp32";
+const char* ftp_pass = "esp32";
+// ----------------------
+
+// FTP server instance
+FtpServer ftpSrv;
+
+void setup() {
+  // 1. Initialize serial communication for debugging
+  Serial.begin(115200);
+  while (!Serial) { ; } // Wait for serial port to connect
+  Serial.println("\n\n--- Starting Multi-Session FTP Server (mischianti.org) ---");
+
+  // 2. Connect to the WiFi network
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connection established!");
+  Serial.print("FTP Server IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // 3. Mount the SPIFFS filesystem
+  // The 'true' parameter formats the filesystem if it cannot be mounted.
+  // Useful for the first boot, but be careful: it erases all files!
+  if (!SPIFFS.begin(true)) {
+    Serial.println("Error mounting SPIFFS! Halting program.");
+    while (1); // Halt execution
+  }
+  Serial.println("SPIFFS filesystem mounted successfully.");
+  Serial.println("Ready to receive FTP connections.");
+
+  // 4. Start the FTP server with the defined credentials
+  ftpSrv.begin(ftp_user, ftp_pass);
+}
+
+void loop() {
+  // The handleFTP() function must be called repeatedly in the loop.
+  // It manages all active connections, transfers, and timeouts.
+  ftpSrv.handleFTP();
+}</pre>
+<!-- /wp:syntaxhighlighter/code -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Managing Large-Scale Data: Integrating an SD Card </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>For applications that generate large amounts of data, <a href="https://www.mischianti.org/2021/02/08/how-to-use-an-sd-card-with-esp32/" target="_blank" rel="noopener">integrating an SD card is the most common solution</a>. Switching from SPIFFS to an SD card is surprisingly simple and demonstrates the library's excellent abstraction.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:image {"lightbox":{"enabled":true},"id":15293,"sizeSlug":"full","linkDestination":"none","align":"center"} -->
+<figure class="wp-block-image aligncenter size-full"><img src="https://mischianti.org/wp-content/uploads/2021/10/ESP32-SD-adapter-wiring-breadboard.jpg" alt="ESP32 SD adapter wiring breadboard" class="wp-image-15293"/><figcaption class="wp-element-caption">ESP32 SD adapter wiring breadboard</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:syntaxhighlighter/code {"language":"arduino"} -->
+<pre class="wp-block-syntaxhighlighter-code">/******************************************************************************
+ * MultiFTPServer - SD Card Example
+ *
+ * A project by Renzo Mischianti
+ * https://www.mischianti.org
+ *
+ * This sketch demonstrates how to set up a high-performance multi-session
+ * FTP server on an ESP32 using a standard SD Card.
+ *
+ * Find more details about the MultiFTPServer library at:
+ * https://mischianti.org/category/my-libraries/multi-ftp-server/
+ *
+ * Copyright (c) 2024 Renzo Mischianti. All rights reserved.
+ ******************************************************************************/
+
+// Include necessary libraries
+#include &lt;WiFi.h>   // For WiFi connectivity
+#include &lt;SPI.h>    // Required for SD card communication
+#include &lt;SD.h>     // Standard SD card library for FAT filesystem
+#include "MultiFTPServer.h" // The asynchronous multi-session FTP server library
+
+// --- Configuration ---
+// Enter your WiFi network credentials here
+const char* ssid = "YOUR_SSID";     // &lt;-- MODIFY THIS!
+const char* password = "YOUR_PASSWORD"; // &lt;-- MODIFY THIS!
+
+// Enter your FTP server access credentials here
+const char* ftp_user = "esp32";
+const char* ftp_pass = "esp32";
+
+// Define the Chip Select (CS) pin for your SD Card module
+// This pin can vary depending on your ESP32 board or SD card module wiring.
+#define SD_CS_PIN 5 // Common CS pin for many ESP32 development boards
+// ----------------------
+
+// FTP server instance
+FtpServer ftpSrv;
+
+void setup() {
+  // 1. Initialize serial communication for debugging
+  Serial.begin(115200);
+  while (!Serial) { ; } // Wait for serial port to connect
+  Serial.println("\n\n--- Starting Multi-Session FTP Server (mischianti.org) ---");
+
+  // 2. Connect to the WiFi network
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connection established!");
+  Serial.print("FTP Server IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // 3. Initialize the SD card module
+  Serial.print("Initializing SD card with CS pin ");
+  Serial.print(SD_CS_PIN);
+  Serial.print("... ");
+  // SD.begin() initializes the SPI interface and mounts the filesystem
+  if (!SD.begin(SD_CS_PIN)) {
+    Serial.println("SD card initialization failed! Please check wiring and CS pin.");
+    while (1); // Halt execution if SD card cannot be initialized
+  }
+  Serial.println("SD card mounted successfully.");
+  Serial.println("Ready to receive FTP connections.");
+
+  // 4. Start the FTP server with the defined credentials
+  ftpSrv.begin(ftp_user, ftp_pass);
+}
+
+void loop() {
+  // The handleFTP() function must be called repeatedly in the loop.
+  // It actively manages all active connections, file transfers, and timeouts.
+  ftpSrv.handleFTP();
+}</pre>
+<!-- /wp:syntaxhighlighter/code -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Advanced Features: Real-Time Monitoring with Callbacks </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>One of the most powerful features of MultiFTPServer is its <strong>callback</strong> system. A callback function allows the library to "call back" a user-defined function when a specific event occurs (an <em>event-driven</em> approach). This transforms the FTP server from a passive file manager into an interactive component of your application logic.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Practical Callback Implementation Example</h2>
+<!-- /wp:heading -->
+
+<!-- wp:syntaxhighlighter/code {"language":"arduino"} -->
+<pre class="wp-block-syntaxhighlighter-code">// Add this code to the previous example
+
+// --- Callback Function Declaration ---
+void ftpCallback(FtpOperation event, unsigned int freeSpace, unsigned int totalSpace) {
+  switch (event) {
+    case FTP_CONNECT:
+      Serial.println("FTP: A client has connected.");
+      break;
+    case FTP_DISCONNECT:
+      Serial.println("FTP: A client has disconnected.");
+      break;
+    case FTP_TRANSFER_START:
+      Serial.println("FTP: A file transfer has started...");
+      break;
+    case FTP_TRANSFER_COMPLETE:
+      Serial.println("FTP: Transfer completed!");
+      break;
+    case FTP_FREE_SPACE_CHANGE:
+      Serial.println("FTP: Storage space has changed.");
+      Serial.printf("   Free Space: %u bytes\n", (SD.totalBytes() - SD.usedBytes()));
+      break;
+  }
+}
+
+// --- In setup(), after ftpSrv.begin() ---
+void setup() {
+  // ... (all previous initialization code)
+
+  // 5. Register the callback function
+  ftpSrv.setCallback(ftpCallback);
+  Serial.println("FTP callback function registered.");
+}
+</pre>
+<!-- /wp:syntaxhighlighter/code -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Performance Analysis and Optimization </h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>For professional applications, it's crucial to measure and optimize performance. To optimize the server for a specific application, you need to perform benchmarks.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Key Performance Metrics:</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+  <li><strong>Throughput (Speed)</strong>: KB/s or MB/s, crucial for large files.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Latency</strong>: Command response time.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Concurrent Stability</strong>: Ability to handle multiple clients without errors.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>RAM Usage</strong>: Memory consumed by the server under load.</li>
+  <!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">A Practical Benchmarking Methodology</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+  <li><strong>Prepare the Environment</strong>: Create a test file of a known size (e.g., 10 MB) and use a command-line FTP client.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Measure Throughput</strong>: Use the <code>FTP_TRANSFER_START</code> and <code>FTP_TRANSFER_COMPLETE</code> callbacks with <code>millis()</code> to calculate duration and thus speed.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Measure RAM Usage</strong>: During transfers, periodically print <code>ESP.getFreeHeap()</code> to see the real impact of your settings.</li>
+  <!-- /wp:list-item -->
+
+  <!-- wp:list-item -->
+  <li><strong>Optimization Process</strong>: Start with the default values. <strong>Vary only one parameter at a time</strong> (e.g., <code>FTP_BUF_SIZE</code>) and record the results (throughput and RAM) in a table to find the "sweet spot" for your use case.</li>
+  <!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Thanks</h2>
+<!-- /wp:heading -->
+
+<!-- wp:block {"ref":3996} /-->
