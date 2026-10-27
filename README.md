@@ -1,4 +1,4 @@
-# MultiFTPServer Library v3.0.3
+# MultiFTPServer Library v3.0.4
 
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
@@ -56,6 +56,7 @@ Complete tutorials and platform-specific guides by the author are available on m
 - Expose device filesystem via FTP (upload, download, delete, rename, list)
 - Multiple concurrent FTP sessions (configurable with `FTP_MAX_SESSIONS`)
 - Resume support (REST) and RFC-like commands (ALLO, STAT, SYST, HELP)
+- Passive (`PASV`, `EPSV`) and active (`PORT`) data connections
 - UTF-8 filename support
 - Configurable buffers and timeouts via `FtpServerKey.h`
 - Works with internal flash filesystems (SPIFFS, LittleFS, FFAT) and external SD (SD, SdFat)
@@ -69,14 +70,15 @@ Complete tutorials and platform-specific guides by the author are available on m
 | ESP8266 | SPIFFS, LittleFS, SD | Limited RAM vs ESP32 |
 | RP2040 / Pico W | LittleFS, SD | See Pico W examples |
 | STM32 | SdFat, SPI flash | Use SdFat examples |
-| Arduino (AVR) | SD (8.3) | Use SdFat for better compatibility |
+| Arduino (AVR) | SD (8.3) | Mega 2560 + W5100/W5500 shield; use SdFat for better compatibility |
+| Arduino SAMD (Nano 33 IoT, MKR WiFi 1010) | SD, SdFat | WiFiNINA (firmware >= 1.5.0), see `Arduino_WiFiNINA_SD` |
 | Wio Terminal | SdFat, Seed SD, native FAT | See Wio examples |
 
 > ⚠️ Note: Some older AVR boards (Uno/Mega) have limited RAM and may not support large transfers or advanced features. Prefer ESP32/ESP8266 for heavy use.
 
 ## 🌐 Supported Network Interfaces
 
-- WiFi (ESP32, ESP8266, RP2040-W)  
+- WiFi (ESP32, ESP8266, RP2040-W, WiFiNINA)  
 - Ethernet (W5x00, W5500, ENC28J60) — platform and example dependent
 
 ## 💾 Supported Storage Systems
@@ -149,13 +151,27 @@ See `FtpServerKey.h` for config defines and defaults. Key settings:
 - `FTP_MAX_SESSIONS` — number of concurrent FTP sessions
 - `FTP_TIME_OUT` — inactivity timeout (seconds)
 - `FTP_AUTH_TIME_OUT` — authentication timeout (seconds)
+- `FTP_DATA_CLOSE_TIMEOUT_MS` — `NETWORK_W5100` only: max wait for the client to close the data connection at the end of a transfer before the Ethernet library resets it (default `5000`; with the library default of 1 s a slow client lost the end of the file)
+- `FTP_SERVER_DEBUG` — enable debug messages (e.g. `-D FTP_SERVER_DEBUG` in `build_flags`)
 - `DEBUG_PRINTER` — debug output stream (defaults to `Serial`)
+
+### Passive and active mode
+
+Prefer **passive mode** (the FileZilla default). In active mode (`PORT`) the board opens the data connection towards the PC, so the PC firewall must accept incoming connections for the FTP client on the network profile in use: on Windows a rule that allows FileZilla only on *Public* networks blocks it on a *Private* one, and every listing or transfer fails with `425 No data connection` after a few seconds.
+
+With WiFiNINA (Arduino Nano 33 IoT, MKR WiFi 1010) the NINA module can close an active-mode data connection while the board is sending to a slower receiver: the server answers `426` and the transfer has to be repeated. Passive mode is not affected.
 
 ## 🧩 Included Examples
 
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
+- 2026-10-23 3.0.4
+  - A failed `STOR` (`425`, e.g. active mode blocked by the PC firewall) no longer deletes or truncates the existing file
+  - An interrupted download is reported with `426` instead of `226` in `doRetrieve()` (e.g. WiFiNINA in active mode)
+  - A complete download is no longer reported with `426` when the client closes the data connection right after the last byte (e.g. curl)
+  - `NETWORK_W5100`: downloads to slow clients no longer lose the end of the file (`EthernetClient::stop()` reset the connection after 1 s); new `FTP_DATA_CLOSE_TIMEOUT_MS`
+  - `NETWORK_WiFiS3` (Arduino UNO R4 WiFi) definitions added, but not working yet: uploads and downloads lose 1 byte every 1024. Use SimpleFTPServer on that board
 - 2026-10-17 3.0.3
   - Add RFC 2428 `EPSV` (Extended Passive Mode) command and `FEAT` announcement with `WiFiNINA` socket reuse guard (SimpleFTPServer#99)
   - Fix partial TCP write rewind in `doRetrieve()` when `data.write()` writes fewer bytes than read from storage under TCP backpressure (SimpleFTPServer#100)
@@ -206,7 +222,7 @@ See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, 
 ## 📄 License
 MIT License — see `LICENSE.md` for details.
 
-Copyright (c) 2017-2025 Renzo Mischianti
+Copyright (c) 2017-2026 Renzo Mischianti
 
 ## 🤝 Contributing
 Contributions are welcome! Fork the repo, create a feature branch, commit and submit a Pull Request. Please ensure examples build on target platforms before opening a PR.

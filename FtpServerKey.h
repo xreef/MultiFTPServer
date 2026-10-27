@@ -56,6 +56,7 @@
 #define NETWORK_ETHERNET_STM 	(12)
 #define NETWORK_UIPETHERNET 	(13)	// UIPEthernet library same of NETWORK_ENC28J60
 #define NETWORK_ETHERNET_GENERIC	(14)	// Ethernet generic
+#define NETWORK_WiFiS3			(16)	// Arduino UNO R4 WiFi standard WiFiS3 library
 
 // esp8266 configuration
 #ifndef DEFAULT_FTP_SERVER_NETWORK_TYPE_ESP8266
@@ -125,6 +126,14 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 	#define DEFAULT_STORAGE_TYPE_SAMD 					STORAGE_SD
 #endif
 
+// Arduino Renesas (UNO R4 WiFi) configuration
+#ifndef DEFAULT_FTP_SERVER_NETWORK_TYPE_RENESAS
+	#define DEFAULT_FTP_SERVER_NETWORK_TYPE_RENESAS 	NETWORK_WiFiS3
+#endif
+#ifndef DEFAULT_STORAGE_TYPE_RENESAS
+	#define DEFAULT_STORAGE_TYPE_RENESAS 				STORAGE_SD
+#endif
+
 #define UTF8_SUPPORT
 
 //#define SD_CS_PIN 4
@@ -136,6 +145,13 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 // Wait for authentication for 10 seconds (expressed in seconds)
 #ifndef FTP_AUTH_TIME_OUT
 	#define FTP_AUTH_TIME_OUT 10
+#endif
+
+// NETWORK_W5100 only: at the end of a transfer, max time (ms) to wait for the
+// client to close the data connection before the Ethernet library resets it
+// (with its default of 1 s a slow client loses the end of the file).
+#ifndef FTP_DATA_CLOSE_TIMEOUT_MS
+	#define FTP_DATA_CLOSE_TIMEOUT_MS 5000
 #endif
 
 // Minimum free space (bytes) required to accept an upload when FTP_CHECK_SPACE_ON_UPLOAD is enabled

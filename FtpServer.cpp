@@ -313,6 +313,8 @@ void FtpServer::begin( const char * _user, const char * _pass, const char * _wel
                 DEBUG_PRINTER.println(F("WARNING: WiFiNINA firmware < 1.5.0 detected! Please upgrade NINA firmware (>= 1.5.0) for WiFiServer::accept() FTP support."));
             }
         }
+    #elif FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiS3
+        DEBUG_PRINTLN(F("WiFiS3 (UNO R4 WiFi)"));
     #elif FTP_SERVER_NETWORK_TYPE == NETWORK_SEEED_RTL8720DN
         DEBUG_PRINTLN(F("Seeed RTL8720DN"));
     #else
@@ -1224,53 +1226,56 @@ bool FtpServer::processCommand()
 #endif
 #endif
 
-      bool open;
-
-      // If STOR and file exists we remove it first to ensure overwrite
-      if (CommandIs("STOR") && exists(path)) {
-        DEBUG_PRINTLN(F("STOR - existing file will be removed for overwrite"));
-        // try to remove; ignore result, openFile with create should still work
-        remove(path);
-      }
-
-      if( exists( path )) {
-        DEBUG_IDX;
-    	DEBUG_PRINTLN(F("APPEND FILE!!"));
-        open = openFile( path, ( CommandIs( "APPE" ) ? FTP_FILE_WRITE_APPEND : FTP_FILE_WRITE_CREATE ));
-      } else {
-        DEBUG_IDX;
-    	  DEBUG_PRINTLN(F("CREATE FILE!!"));
-        open = openFile( path, FTP_FILE_WRITE_CREATE );
-      }
-
       // Ensure any previous data connection is closed before starting
       data.stop();
 
-      DEBUG_IDX;
-      DEBUG_PRINT(F("open/create "));
-      DEBUG_PRINTLN(open);
-      if( ! open ){
-    	  client.print( F("451 Can't open/create ") ); client.println( parameter );
-        // ensure no dangling file
-        file.close();
+      // Open the data connection before touching the file: when it fails (425)
+      // an existing file must be left intact, not removed or truncated
+      if( ! dataConnect( false )) {
+        // dataConnect already sends a 425 No data connection when it fails
+        DEBUG_IDX;
+        DEBUG_PRINTLN(F("Data connection failed for STOR/APPE"));
         transferStage = FTP_Close;
       } else {
-        // Try to establish data connection (this will also send 150 if successful)
-        if( ! dataConnect()) {
-          // dataConnect already sends a 425 No data connection when it fails
-          DEBUG_PRINTLN(F("Data connection failed for STOR/APPE"));
-        file.close();
+        bool open;
+
+        // If STOR and file exists we remove it first to ensure overwrite
+        if (CommandIs("STOR") && exists(path)) {
+          DEBUG_PRINTLN(F("STOR - existing file will be removed for overwrite"));
+          // try to remove; ignore result, openFile with create should still work
+          remove(path);
+        }
+
+        if( exists( path )) {
+          DEBUG_IDX;
+          DEBUG_PRINTLN(F("APPEND FILE!!"));
+          open = openFile( path, ( CommandIs( "APPE" ) ? FTP_FILE_WRITE_APPEND : FTP_FILE_WRITE_CREATE ));
+        } else {
+          DEBUG_IDX;
+          DEBUG_PRINTLN(F("CREATE FILE!!"));
+          open = openFile( path, FTP_FILE_WRITE_CREATE );
+        }
+
+        DEBUG_IDX;
+        DEBUG_PRINT(F("open/create "));
+        DEBUG_PRINTLN(open);
+        if( ! open ){
+          client.print( F("451 Can't open/create ") ); client.println( parameter );
+          // ensure no dangling file or data connection
+          file.close();
+          data.stop();
           transferStage = FTP_Close;
         } else {
+          client.print( F("150 Accepted data connection to port ") ); client.println( dataPort );
           DEBUG_PRINT( F(" Receiving ") ); DEBUG_PRINTLN( parameter );
 
-        millisBeginTrans = millis();
-        bytesTransfered = 0;
-        transferStage = FTP_Store;
+          millisBeginTrans = millis();
+          bytesTransfered = 0;
+          transferStage = FTP_Store;
 
-	  if (FtpServer::_transferCallback) {
-		FtpServer::_transferCallback(FTP_UPLOAD_START, parameter, bytesTransfered);
-	  }
+          if (FtpServer::_transferCallback) {
+            FtpServer::_transferCallback(FTP_UPLOAD_START, parameter, bytesTransfered);
+          }
         }
       }
     }
@@ -1701,10 +1706,21 @@ bool FtpServer::openDir( FTP_DIR * pdir )
 
 bool FtpServer::doRetrieve()
 {
-  if( ! dataConnected())
+  // Query the connection once (WiFiS3 can answer differently to two calls in a row).
+  // The client may close it as soon as it has the whole file (e.g. curl, which
+  // knows the size from SIZE): that is a completed transfer, not an abort.
+  if( ! data.connected())
   {
-    file.close();
-    return false;
+    if( bytesTransfered >= fileSize( file ))
+    {
+      closeTransfer();
+      return false;
+    }
+    if( ! dataConnected())
+    {
+      file.close();
+      return false;
+    }
   }
 
   // Handle resume if REST was used
@@ -1731,7 +1747,9 @@ bool FtpServer::doRetrieve()
     DEBUG_IDX; DEBUG_PRINT(F("NB --> "));
     DEBUG_PRINTLN(nb);
     if (written <= 0) {
-      closeTransfer();
+      // the file was not sent completely: 426, never 226 (e.g. WiFiNINA closes
+      // the socket when the module does not accept the data, seen in active mode)
+      abortTransfer();
       return false;
     }
     if (written < nb) {
@@ -2337,7 +2355,15 @@ void FtpServer::closeTransfer()
 
   // Stop data connection and close file before sending response
   file.close();
+#if FTP_SERVER_NETWORK_TYPE == NETWORK_W5100
+  // Ethernet library: stop() waits only 1 s for the client to close, then resets
+  // the connection and the end of the file a slow client has not read yet is lost
+  data.setConnectionTimeout( FTP_DATA_CLOSE_TIMEOUT_MS );
   data.stop();
+  data.setConnectionTimeout( 1000 );
+#else
+  data.stop();
+#endif
 
   if( deltaT > 0 && bytesTransfered > 0 )
   {

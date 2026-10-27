@@ -2,6 +2,19 @@
 
 Tutte le modifiche importanti al progetto `MultiFTPServer` vengono documentate in questo file.
 
+## [3.0.4] - 2026-10-23
+### Nessun file cancellato o troncato con esito positivo:
+
+- **`STOR` fallito non cancella più il file esistente**: la connessione dati viene aperta *prima* di rimuovere/ricreare il file. Prima uno `STOR` che finiva con `425` (es. modalità attiva bloccata dal firewall del PC) lasciava il file esistente a 0 byte.
+- **Download interrotto segnalato con `426` invece di `226`**: in `doRetrieve()`, se `data.write()` fallisce, il server risponde `426 Transfer aborted` (callback `FTP_TRANSFER_ERROR`) invece di `226 File successfully transferred` con il file troncato (es. Nano 33 IoT/WiFiNINA in modalità attiva verso un ricevente più lento).
+- **Download completo non più segnalato con `426`**: se il client chiudeva la connessione dati appena ricevuto l'ultimo byte (es. curl, che conosce la dimensione da `SIZE`), il server poteva rispondere `426 Data connection closed` a un file arrivato intero. Ora `doRetrieve()` interroga la connessione una sola volta per ciclo e, se il client ha chiuso dopo aver ricevuto tutto il file, risponde `226`.
+- **Download verso client lenti non più troncati con `NETWORK_W5100`**: a fine trasferimento `EthernetClient::stop()` aspettava solo 1 s la chiusura del client e poi resettava la connessione, così un client che leggeva lentamente perdeva la fine del file mentre il server rispondeva `226`. Ora `closeTransfer()` aspetta fino a `FTP_DATA_CLOSE_TIMEOUT_MS` (5000, in `FtpServerKey.h`).
+- **`NETWORK_WiFiS3` (Arduino UNO R4 WiFi): definizioni aggiunte, supporto non ancora funzionante.** Il codice compila e il server risponde, ma nei test su UNO R4 WiFi + SD upload e download perdono 1 byte ogni 1024. Su questa scheda usare SimpleFTPServer, che con `NETWORK_WiFiS3` supera tutti i test.
+
+Verificato su ESP32 (LittleFS): suite live 10/10, `STOR` fallito con file intatto, trasferimenti in modalità attiva (FXP) 4/4. Su Mega 2560 + W5100 + SD: suite live 10/10, client a 1,3 KB/s con file intero (prima 5888 byte su 8192).
+
+---
+
 ## [3.0.3] - 2026-10-17
 ### Correzioni di bug, conformità RFC e miglioramenti prestazionali (con `+0 byte` di overhead SRAM su AVR):
 
