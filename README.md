@@ -1,4 +1,4 @@
-# MultiFTPServer Library v3.0.4
+# MultiFTPServer Library v3.0.5
 
 ![MultiFTPServer Logo](resources/MultiFTPServerLogo.png)
 
@@ -166,6 +166,10 @@ With WiFiNINA (Arduino Nano 33 IoT, MKR WiFi 1010) the NINA module can close an 
 See the `examples/` folder for ready-to-use sketches for many platforms (ESP32, ESP8266, RP2040, STM32, Wio Terminal, Arduino). Adapt SSID, credentials and SD pins as needed.
 
 ## 📝 Changelog (excerpt)
+- 2026-11-05 3.0.5
+  - `NETWORK_WiFiNINA` and `NETWORK_WiFiS3`: throttle control-socket polling (`readChar()` / `client.connected()`) to 250 ms during active data transfers to avoid SPI/UART bus contention with the radio module
+  - Add idle-session preemption (`FTP_IDLE_PREEMPT_MS` in `FtpServerKey.h`) for ESP32/ESP8266 WiFi/ETH, `NETWORK_WiFiNINA` and `NETWORK_WiFiS3`, and refresh `millisEndConnection` during active transfers (`RETR`, `LIST`/`NLST`, `MLSD`)
+  - `doRetrieve()` on `NETWORK_WiFiNINA` and `NETWORK_WiFiS3`: retry `data.write()` for up to 2000 ms under TCP backpressure before aborting with `426`, skip redundant pre/post-write `data.connected()` queries and `delay(1)` on `WiFiS3`, and complete cleanly with `226` when `bytesTransfered >= fileSize(file)`
 - 2026-10-23 3.0.4
   - A failed `STOR` (`425`, e.g. active mode blocked by the PC firewall) no longer deletes or truncates the existing file
   - An interrupted download is reported with `426` instead of `226` in `doRetrieve()` (e.g. WiFiNINA in active mode)

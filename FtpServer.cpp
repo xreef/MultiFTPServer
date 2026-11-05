@@ -50,6 +50,15 @@
 #include <ctype.h>
 #include <new>
 
+// Network classes of the ESP cores (WiFiServer/WiFiClient): hasClient() exists
+// and connect() blocks until it succeeds or its own timeout expires.
+#if (defined(ESP32) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP32 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP32_ETH || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)) || \
+    (defined(ESP8266) && (FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_242 || FTP_SERVER_NETWORK_TYPE == NETWORK_ESP8266_ASYNC))
+  #define FTP_ESP_NETWORK_CLASSES 1
+#else
+  #define FTP_ESP_NETWORK_CLASSES 0
+#endif
+
 #if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
 template <typename S>
 static auto wifiNinaAccept(S &srv, int) -> decltype(srv.accept()) {
@@ -560,25 +569,70 @@ void FtpServer::_handleFTP() {
 				millisEndConnection = millis() + 1000L * FTP_AUTH_TIME_OUT; // wait client id for 10 s.
 				cmdStage = FTP_User;
 			}
-		} else if (readChar() > 0)             // got response
-				{
-			processCommand();
-			if (cmdStage == FTP_Stop)
-				millisEndConnection = millis() + 1000L * FTP_AUTH_TIME_OUT; // wait authentication for 10 s.
-			else if (cmdStage < FTP_Cmd)
-				millisDelay = millis() + 200;     // delay of 100 ms
-			else
-				millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
-		} else if (!client.connected()) {
-			if (FtpServer::_callback) {
-			  DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_DISCONNECT (no client)"));
-			  FtpServer::_callback(FTP_DISCONNECT, 0, 0);
+		} else {
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiS3 || FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+			static uint32_t lastCtrlPollMs = 0;
+			bool pollCtrl = (transferStage == FTP_Close) || ((uint32_t)(millis() - lastCtrlPollMs) >= 250);
+			if (pollCtrl) {
+				lastCtrlPollMs = millis();
 			}
+#else
+			const bool pollCtrl = true;
+#endif
+			if (pollCtrl && readChar() > 0)             // got response
+			{
+				processCommand();
+				if (cmdStage == FTP_Stop)
+					millisEndConnection = millis() + 1000L * FTP_AUTH_TIME_OUT; // wait authentication for 10 s.
+				else if (cmdStage < FTP_Cmd)
+					millisDelay = millis() + 200;     // delay of 100 ms
+				else
+					millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
+			} else if (pollCtrl && !client.connected()) {
+				if (FtpServer::_callback) {
+				  DEBUG_PRINTLN(F("[FtpServer] invoking _callback: FTP_DISCONNECT (no client)"));
+				  FtpServer::_callback(FTP_DISCONNECT, 0, 0);
+				}
 
-			cmdStage = FTP_Init;
+				cmdStage = FTP_Init;
+			}
+#if FTP_ESP_NETWORK_CLASSES && (FTP_IDLE_PREEMPT_MS > 0)
+			// Another client is waiting and this logged-in session is idle: let the new one in
+			// (millisEndConnection - FTP_TIME_OUT = time of the last command or data received)
+			else if (cmdStage == FTP_Cmd && transferStage == FTP_Close && !client.available()
+					&& (int32_t)(millis() - (millisEndConnection - 1000L * FTP_TIME_OUT)) > (int32_t)FTP_IDLE_PREEMPT_MS
+					&& FtpServer::ftpServer->hasClient()) {
+				DEBUG_IDX; DEBUG_PRINTLN(F("New FTP client waiting while current session is idle -> switching client"));
+				disconnectClient();
+				cmdStage = FTP_Init;
+			}
+#elif (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiS3 || FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA) && (FTP_IDLE_PREEMPT_MS > 0)
+			else if (cmdStage == FTP_Cmd && transferStage == FTP_Close
+					&& (int32_t)(millis() - (millisEndConnection - 1000L * FTP_TIME_OUT)) > (int32_t)FTP_IDLE_PREEMPT_MS) {
+				static uint32_t lastPreemptCheckMs = 0;
+				if ((uint32_t)(millis() - lastPreemptCheckMs) >= 250) {
+					lastPreemptCheckMs = millis();
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+					FTP_CLIENT_NETWORK_CLASS newClient = wifiNinaAccept(*FtpServer::ftpServer, 0);
+#else
+					FTP_CLIENT_NETWORK_CLASS newClient = FtpServer::ftpServer->accept();
+#endif
+					if (newClient && newClient != client && newClient.connected()) {
+						DEBUG_IDX; DEBUG_PRINTLN(F("New FTP client accepted while current session is idle -> switching client"));
+						disconnectClient();
+						client = newClient;
+						iniVariables();
+						clientConnected();
+						millisEndConnection = millis() + 1000L * FTP_AUTH_TIME_OUT;
+						cmdStage = FTP_User;
+					}
+				}
+			}
+#endif
 		}
 		if (transferStage == FTP_Retrieve)   // Retrieve data
 				{
+			millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
 			if (!doRetrieve()) {
 				transferStage = FTP_Close;
 			}
@@ -598,11 +652,13 @@ void FtpServer::_handleFTP() {
 			}
 		} else if (transferStage == FTP_List || transferStage == FTP_Nlst) // LIST or NLST
 				{
+			millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
 			if (!doList()) {
 				transferStage = FTP_Close;
 			}
 		} else if (transferStage == FTP_Mlsd)  // MLSD listing
 				{
+			millisEndConnection = millis() + 1000L * FTP_TIME_OUT;
 			if (!doMlsd()) {
 
 				transferStage = FTP_Close;
@@ -1706,6 +1762,7 @@ bool FtpServer::openDir( FTP_DIR * pdir )
 
 bool FtpServer::doRetrieve()
 {
+#if (FTP_SERVER_NETWORK_TYPE != NETWORK_WiFiS3 && FTP_SERVER_NETWORK_TYPE != NETWORK_WiFiNINA)
   // Query the connection once (WiFiS3 can answer differently to two calls in a row).
   // The client may close it as soon as it has the whole file (e.g. curl, which
   // knows the size from SIZE): that is a completed transfer, not an abort.
@@ -1722,6 +1779,7 @@ bool FtpServer::doRetrieve()
       return false;
     }
   }
+#endif
 
   // Handle resume if REST was used
   if (restartPos > 0) {
@@ -1743,25 +1801,92 @@ bool FtpServer::doRetrieve()
 
   if( nb > 0 )
   {
-    int32_t written = data.write( buf, nb );
+    // write() may not send everything in one call on some clients; capture return
+    int32_t written = 0;
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiS3 || FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+    uint32_t waitStart = millis();
+    while ((uint32_t)(millis() - waitStart) < 2000) {
+      written = data.write( buf, nb );
+      if (written > 0 || !data.connected()) {
+        break;
+      }
+      delay(2);
+    }
+#else
+    written = data.write( buf, nb );
+#endif
+
     DEBUG_IDX; DEBUG_PRINT(F("NB --> "));
     DEBUG_PRINTLN(nb);
+    DEBUG_IDX; DEBUG_PRINT(F("WRITTEN --> "));
+    DEBUG_PRINTLN(written);
+
     if (written <= 0) {
+      if (bytesTransfered >= fileSize( file )) {
+        closeTransfer();
+        return false;
+      }
       // the file was not sent completely: 426, never 226 (e.g. WiFiNINA closes
       // the socket when the module does not accept the data, seen in active mode)
+      DEBUG_PRINTLN(F("ERROR: data.write returned <= 0"));
       abortTransfer();
       return false;
     }
+
+    // If partial write, try to send the remainder (best-effort)
     if (written < nb) {
       int16_t remaining = nb - written;
+      DEBUG_PRINT(F("Partial write, attempting remainder -> "));
+      DEBUG_PRINTLN(remaining);
       const uint8_t* p = (const uint8_t*)buf + written;
       int32_t more = data.write(p, remaining);
+      DEBUG_PRINT(F("MORE WRITTEN -> "));
+      DEBUG_PRINTLN(more);
       if (more > 0) written += more;
       if (written < nb) {
         file.seek(bytesTransfered + written);
       }
     }
+
+    // Try to flush the socket where available (ESP8266-specific)
+    #if defined(ESP8266)
+      data.flush();
+    #endif
+
+    // Give the network stack a tiny moment to send data (avoid client timeouts)
+    #if defined(ESP8266) || defined(ESP32)
+      yield();
+    #elif FTP_SERVER_NETWORK_TYPE != NETWORK_WiFiS3
+      delay(1);
+    #endif
+
     bytesTransfered += written;
+
+#if (FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiS3 || FTP_SERVER_NETWORK_TYPE == NETWORK_WiFiNINA)
+    if (written < nb && !data.connected()) {
+      if( bytesTransfered >= fileSize( file )) {
+        closeTransfer();
+      } else {
+        abortTransfer();
+      }
+      return false;
+    }
+#else
+    // Log connection status after write to help diagnose intermittent disconnects
+    DEBUG_PRINT(F("DATA CONNECTED AFTER WRITE -> "));
+    DEBUG_PRINTLN(data.connected() ? 1 : 0);
+
+    if (!data.connected()) {
+      DEBUG_PRINTLN(F("Data socket closed by peer after write"));
+      // complete only if the whole file was handed to the socket
+      if( bytesTransfered >= fileSize( file )) {
+        closeTransfer();
+      } else {
+        abortTransfer();
+      }
+      return false;
+    }
+#endif
 
 	  if (FtpServer::_transferCallback) {
 		  FtpServer::_transferCallback(FTP_DOWNLOAD, getFileName(&file).c_str(), bytesTransfered);

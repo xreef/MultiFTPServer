@@ -154,6 +154,14 @@ https://github.com/arduino-libraries/Ethernet/issues/88
 	#define FTP_DATA_CLOSE_TIMEOUT_MS 5000
 #endif
 
+// When all sessions are occupied and another client is waiting while a logged-in
+// session is idle (no command, no transfer) for this time (ms), the idle session
+// is closed and the waiting client is accepted. 0 disables it.
+// Used with ESP32 WiFi/ETH, ESP8266 WiFi, WiFiNINA and WiFiS3.
+#ifndef FTP_IDLE_PREEMPT_MS
+	#define FTP_IDLE_PREEMPT_MS 1500
+#endif
+
 // Minimum free space (bytes) required to accept an upload when FTP_CHECK_SPACE_ON_UPLOAD is enabled
 #ifndef FTP_MIN_FREE_SPACE_ON_UPLOAD
 	// Default: 16 KB, can be overridden in project build flags or before including the library

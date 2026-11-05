@@ -2,6 +2,20 @@
 
 Tutte le modifiche importanti al progetto `MultiFTPServer` vengono documentate in questo file.
 
+## [3.0.5] - 2026-11-05
+### Ottimizzazione trasferimenti, gestione backpressure TCP e preemption sessione inattiva per `NETWORK_WiFiNINA` e `NETWORK_WiFiS3`:
+
+- **Throttling del polling sul canale di controllo durante i trasferimenti (`NETWORK_WiFiNINA` e `NETWORK_WiFiS3`)**: durante un trasferimento dati attivo (`transferStage != FTP_Close`), la verifica di nuovi comandi (`readChar()`) e dello stato della connessione di controllo (`client.connected()`) viene eseguita ogni 250 ms anziché a ogni iterazione di `_handleFTP()`, riducendo il traffico SPI/UART verso il coprocessore radio (NINA-W102 / ESP32-S3) e migliorando stabilità e throughput.
+- **Preemption della sessione inattiva (`FTP_IDLE_PREEMPT_MS`) e rinnovo timeout durante i trasferimenti**:
+  - Introdotto `FTP_IDLE_PREEMPT_MS` (default `1500` ms, `0` = disattivato) in `FtpServerKey.h` per consentire l'accettazione di un nuovo client in attesa quando la sessione corrente è inattiva su ESP32/ESP8266 (`hasClient()`), `NETWORK_WiFiNINA` e `NETWORK_WiFiS3` (`accept()` ogni 250 ms).
+  - Aggiornato `millisEndConnection` durante i trasferimenti attivi (`FTP_Retrieve`, `FTP_List`/`FTP_Nlst`, `FTP_Mlsd`) per evitare falsi timeout della sessione di controllo durante trasferimenti prolungati.
+- **Gestione backpressure TCP e riduzione chiamate `data.connected()` in `doRetrieve()` per `NETWORK_WiFiNINA` e `NETWORK_WiFiS3`**:
+  - Aggiunto ciclo di retry fino a 2000 ms (con `delay(2)`) su `data.write(buf, nb)` quando il buffer di trasmissione del modulo WiFi è temporaneamente saturo (`written == 0` ma socket ancora connesso), evitando falsi abort `426`.
+  - Se `written <= 0` ma tutti i byte del file sono già stati trasferiti (`bytesTransfered >= fileSize(file)`), il trasferimento viene chiuso correttamente con `closeTransfer()` (`226`) anziché `abortTransfer()` (`426`).
+  - Evitate le interrogazioni `data.connected()` a inizio ciclo e dopo ogni scrittura completa su `WiFiNINA` e `WiFiS3` (controllando `!data.connected()` dopo la scrittura solo in caso di scrittura parziale `written < nb`) e rimosso `delay(1)` su `NETWORK_WiFiS3`.
+
+---
+
 ## [3.0.4] - 2026-10-23
 ### Nessun file cancellato o troncato con esito positivo:
 
